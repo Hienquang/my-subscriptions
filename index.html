@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>My Subscriptions</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💳</text></svg>">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --ink:#1a1d21; --muted:#6b7280;
+    --accent:#4f46e5; --accent-soft:#eef2ff; --line:#e5e7eb;
+    --red:#dc2626; --red-soft:#fef2f2; --amber:#b45309; --amber-soft:#fffbeb;
+    --green:#047857; --green-soft:#ecfdf5;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:640px;margin:0 auto;padding:20px 16px 90px}
+  header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+  h1{font-size:1.3rem;font-weight:700}
+  .sub{color:var(--muted);font-size:.85rem}
+  button{font:inherit;cursor:pointer;border:none;border-radius:10px}
+  .btn{background:var(--accent);color:#fff;padding:12px 18px;font-weight:600;font-size:.95rem}
+  .btn:disabled{opacity:.5;cursor:default}
+  .btn-ghost{background:transparent;color:var(--muted);padding:8px 12px;font-size:.85rem}
+  .btn-soft{background:var(--accent-soft);color:var(--accent);padding:8px 14px;font-weight:600;font-size:.85rem}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
+
+  /* auth */
+  .auth{max-width:400px;margin:12vh auto 0;text-align:center}
+  .auth h1{margin-bottom:6px}
+  .auth p{color:var(--muted);font-size:.9rem;margin-bottom:20px}
+  .auth input{width:100%;padding:13px 14px;border:1px solid var(--line);border-radius:10px;font-size:1rem;margin-bottom:12px;background:#fff}
+  .auth input:focus{outline:2px solid var(--accent);border-color:transparent}
+  .auth .btn{width:100%}
+  .msg{font-size:.85rem;margin-top:12px;color:var(--muted)}
+  .msg.err{color:var(--red)}
+
+  /* summary */
+  .summary{display:flex;gap:10px;margin-bottom:16px}
+  .stat{flex:1;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px}
+  .stat .label{font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:4px}
+  .stat .value{font-size:1.15rem;font-weight:700}
+
+  /* filters */
+  .chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;margin-bottom:12px;-webkit-overflow-scrolling:touch}
+  .chip{flex:0 0 auto;background:var(--card);border:1px solid var(--line);color:var(--muted);border-radius:999px;padding:7px 14px;font-size:.82rem;font-weight:500}
+  .chip.on{background:var(--ink);border-color:var(--ink);color:#fff}
+
+  /* list */
+  .item{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin-bottom:10px}
+  .item .info{flex:1;min-width:0}
+  .item .name{font-weight:600;font-size:.98rem}
+  .item .meta{color:var(--muted);font-size:.8rem;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .item .right{text-align:right}
+  .item .amt{font-weight:700;font-size:.95rem}
+  .badge{display:inline-block;font-size:.72rem;font-weight:600;padding:3px 8px;border-radius:999px;margin-top:3px}
+  .b-over{background:var(--red-soft);color:var(--red)}
+  .b-soon{background:var(--amber-soft);color:var(--amber)}
+  .b-ok{background:var(--green-soft);color:var(--green)}
+  .b-off{background:var(--line);color:var(--muted)}
+  .item.inactive{opacity:.55}
+  .empty{text-align:center;color:var(--muted);padding:48px 16px;font-size:.92rem}
+
+  /* fab */
+  .fab{position:fixed;right:20px;bottom:24px;width:56px;height:56px;border-radius:50%;background:var(--accent);color:#fff;font-size:1.7rem;line-height:1;box-shadow:0 6px 16px rgba(79,70,229,.35);display:flex;align-items:center;justify-content:center}
+
+  /* modal */
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:flex-end;justify-content:center;z-index:10}
+  .overlay.open{display:flex}
+  .sheet{background:#fff;width:100%;max-width:640px;border-radius:20px 20px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom));max-height:90vh;overflow-y:auto}
+  .sheet h2{font-size:1.05rem;margin-bottom:14px}
+  .field{margin-bottom:12px}
+  .field label{display:block;font-size:.78rem;font-weight:600;color:var(--muted);margin-bottom:5px}
+  .field input,.field select,.field textarea{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;font-size:.95rem;background:#fff}
+  .field input:focus,.field select:focus,.field textarea:focus{outline:2px solid var(--accent);border-color:transparent}
+  .row2{display:flex;gap:10px}
+  .row2 .field{flex:1}
+  .sheet .actions{display:flex;gap:10px;margin-top:16px}
+  .sheet .actions .btn{flex:1}
+  .btn-danger{background:var(--red-soft);color:var(--red);padding:12px 16px;font-weight:600}
+  .check{display:flex;align-items:center;gap:8px;font-size:.9rem;margin-bottom:12px}
+  .check input{width:18px;height:18px;accent-color:var(--accent)}
+  .rowbtns{display:flex;gap:8px;flex-direction:column}
+  .mini{background:var(--accent-soft);color:var(--accent);padding:7px 10px;font-size:.75rem;font-weight:600;white-space:nowrap}
+</style>
+</head>
+<body>
+
+<!-- AUTH -->
+<div id="authView" class="wrap auth" style="display:none">
+  <h1>💳 My Subscriptions</h1>
+  <p>Sign in with your email to see your subscriptions on any device.</p>
+  <div id="stepEmail">
+    <input id="email" type="email" placeholder="you@email.com" autocomplete="email">
+    <button class="btn" id="sendBtn" onclick="sendCode()">Send login code</button>
+  </div>
+  <div id="stepCode" style="display:none">
+    <input id="code" type="text" inputmode="numeric" placeholder="6-digit code" autocomplete="one-time-code">
+    <button class="btn" id="verifyBtn" onclick="verifyCode()">Sign in</button>
+    <button class="btn-ghost" onclick="backToEmail()">Use a different email</button>
+  </div>
+  <div id="authMsg" class="msg"></div>
+</div>
+
+<!-- APP -->
+<div id="appView" class="wrap" style="display:none">
+  <header>
+    <div>
+      <h1>My Subscriptions</h1>
+      <div class="sub" id="userEmail"></div>
+    </div>
+    <button class="btn-ghost" onclick="signOut()">Sign out</button>
+  </header>
+
+  <div class="summary">
+    <div class="stat"><div class="label">Monthly total</div><div class="value" id="totMonthly">–</div></div>
+    <div class="stat"><div class="label">Due in 7 days</div><div class="value" id="dueSoonCount">–</div></div>
+  </div>
+
+  <div class="chips" id="chips"></div>
+  <div id="list"></div>
+
+  <button class="fab" onclick="openForm()">+</button>
+</div>
+
+<!-- FORM -->
+<div class="overlay" id="overlay" onclick="if(event.target===this)closeForm()">
+  <div class="sheet">
+    <h2 id="formTitle">Add subscription</h2>
+    <div class="field"><label>Name *</label><input id="f_name" placeholder="Netflix, iCloud, Gym…"></div>
+    <div class="row2">
+      <div class="field"><label>Amount</label><input id="f_amount" type="number" step="0.01" inputmode="decimal" placeholder="15.99"></div>
+      <div class="field"><label>Currency</label>
+        <select id="f_currency">
+          <option>USD</option><option>SGD</option><option>MYR</option><option>EUR</option><option>GBP</option><option>AUD</option><option>JPY</option><option>KRW</option><option>HKD</option><option>THB</option><option>IDR</option><option>PHP</option><option>VND</option><option>INR</option><option>CAD</option><option>NZD</option><option>CNY</option><option>TWD</option>
+        </select>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>Billing cycle</label>
+        <select id="f_cycle">
+          <option value="monthly">Monthly</option>
+          <option value="yearly">Yearly</option>
+          <option value="quarterly">Quarterly</option>
+          <option value="weekly">Weekly</option>
+          <option value="once">One-time</option>
+        </select>
+      </div>
+      <div class="field"><label>Next bill due</label><input id="f_due" type="date"></div>
+    </div>
+    <div class="field"><label>Paid with (bank account / card)</label>
+      <input id="f_method" list="methods" placeholder="e.g. DBS Visa •1234">
+      <datalist id="methods"></datalist>
+    </div>
+    <div class="field"><label>Notes</label><textarea id="f_notes" rows="2" placeholder="Shared with family, cancel before trial ends…"></textarea></div>
+    <div class="check"><input type="checkbox" id="f_active" checked><label for="f_active" style="margin:0;font-size:.9rem;color:var(--ink)">Active</label></div>
+    <div class="actions">
+      <button class="btn-danger" id="deleteBtn" style="display:none" onclick="delItem()">Delete</button>
+      <button class="btn" id="saveBtn" onclick="saveItem()">Save</button>
+    </div>
+    <button class="btn-ghost" style="width:100%;margin-top:8px" onclick="closeForm()">Cancel</button>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = "https://anpvflizwcmyefbxsfpx.supabase.co";
+const SUPABASE_KEY = "sb_publishable_Va_eUdkFSmtD4uKqNIvppw_wlB1eEYJ";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let items = [];
+let editingId = null;
+let filter = "all";
+let pendingEmail = null;
+
+const $ = id => document.getElementById(id);
+const fmt = (n,c) => (c||"") + " " + Number(n).toFixed(2);
+const today = () => { const d=new Date(); return new Date(d.getFullYear(),d.getMonth(),d.getDate()); };
+
+/* ---------- auth ---------- */
+async function init(){
+  const { data:{ session } } = await sb.auth.getSession();
+  session ? showApp(session) : showAuth();
+  sb.auth.onAuthStateChange((ev, s) => {
+    if (ev === "SIGNED_IN" && s) showApp(s);
+    if (ev === "SIGNED_OUT") showAuth();
+  });
+}
+function showAuth(){ $("appView").style.display="none"; $("authView").style.display="block"; }
+async function showApp(session){
+  $("authView").style.display="none"; $("appView").style.display="block";
+  $("userEmail").textContent = session.user.email;
+  await load();
+}
+async function sendCode(){
+  const email = $("email").value.trim();
+  if(!email){ setMsg("Please enter your email.", true); return; }
+  $("sendBtn").disabled = true; setMsg("Sending…");
+  const { error } = await sb.auth.signInWithOtp({ email, options:{ shouldCreateUser:true, emailRedirectTo: location.origin + location.pathname } });
+  $("sendBtn").disabled = false;
+  if(error){ setMsg(error.message, true); return; }
+  pendingEmail = email;
+  $("stepEmail").style.display="none"; $("stepCode").style.display="block";
+  setMsg("Check your email — enter the 6-digit code, or just tap the login link in the email.");
+}
+async function verifyCode(){
+  const token = $("code").value.trim();
+  if(!token || !pendingEmail) return;
+  $("verifyBtn").disabled = true; setMsg("Verifying…");
+  const { error } = await sb.auth.verifyOtp({ email: pendingEmail, token, type: "email" });
+  $("verifyBtn").disabled = false;
+  if(error) setMsg(error.message, true);
+}
+function backToEmail(){ $("stepCode").style.display="none"; $("stepEmail").style.display="block"; setMsg(""); }
+function setMsg(t, err){ const m=$("authMsg"); m.textContent=t; m.className="msg"+(err?" err":""); }
+async function signOut(){ await sb.auth.signOut(); }
+
+/* ---------- data ---------- */
+async function load(){
+  const { data, error } = await sb.from("subscriptions").select("*");
+  if(error){ alert("Could not load: "+error.message); return; }
+  items = data || [];
+  render();
+}
+
+/* ---------- helpers ---------- */
+function monthlyEquiv(it){
+  if(!it.amount || !it.active) return 0;
+  const a = Number(it.amount);
+  return { monthly:a, yearly:a/12, quarterly:a/3, weekly:a*52/12, once:0 }[it.billing_cycle] ?? a;
+}
+function daysUntil(d){
+  if(!d) return null;
+  return Math.round((new Date(d+"T00:00:00") - today()) / 86400000);
+}
+function addCycle(dateStr, cycle){
+  const d = new Date(dateStr+"T00:00:00");
+  if(cycle==="weekly") d.setDate(d.getDate()+7);
+  else if(cycle==="monthly") d.setMonth(d.getMonth()+1);
+  else if(cycle==="quarterly") d.setMonth(d.getMonth()+3);
+  else if(cycle==="yearly") d.setFullYear(d.getFullYear()+1);
+  else return null;
+  return d.toISOString().slice(0,10);
+}
+
+/* ---------- render ---------- */
+function render(){
+  // totals per currency
+  const totals = {};
+  let dueSoon = 0;
+  items.forEach(it=>{
+    const m = monthlyEquiv(it);
+    if(m>0) totals[it.currency||"?"] = (totals[it.currency||"?"]||0)+m;
+    const du = daysUntil(it.next_due);
+    if(it.active && du!==null && du>=0 && du<=7) dueSoon++;
+  });
+  const tParts = Object.entries(totals).map(([c,v])=>fmt(v,c));
+  $("totMonthly").textContent = tParts.length ? tParts.join(" + ") : "—";
+  $("dueSoonCount").textContent = dueSoon;
+
+  // payment-method chips
+  const methods = [...new Set(items.map(i=>i.payment_method).filter(Boolean))].sort();
+  $("chips").innerHTML =
+    ['<button class="chip'+(filter==="all"?" on":"")+'" onclick="setFilter(\'all\')">All</button>']
+    .concat(methods.map(m=>'<button class="chip'+(filter===m?" on":"")+'" onclick="setFilter('+JSON.stringify(m).replace(/"/g,"&quot;")+')">'+esc(m)+'</button>'))
+    .join("");
+  $("methods").innerHTML = methods.map(m=>'<option value="'+esc(m)+'">').join("");
+
+  // list: active first, sorted by due date
+  const shown = items.filter(i=>filter==="all"||i.payment_method===filter)
+    .sort((a,b)=>{
+      if(a.active!==b.active) return a.active?-1:1;
+      const da=a.next_due||"9999", db=b.next_due||"9999";
+      return da<db?-1:da>db?1:0;
+    });
+
+  if(!shown.length){
+    $("list").innerHTML = '<div class="empty">No subscriptions yet.<br>Tap <b>+</b> to add your first one.</div>';
+    return;
+  }
+  $("list").innerHTML = shown.map(it=>{
+    const du = daysUntil(it.next_due);
+    let badge="";
+    if(!it.active) badge='<span class="badge b-off">Paused</span>';
+    else if(du===null) badge="";
+    else if(du<0) badge='<span class="badge b-over">Overdue '+(-du)+'d</span>';
+    else if(du===0) badge='<span class="badge b-over">Due today</span>';
+    else if(du<=7) badge='<span class="badge b-soon">Due in '+du+'d</span>';
+    else badge='<span class="badge b-ok">Due '+prettyDate(it.next_due)+'</span>';
+    const canAdvance = it.active && it.next_due && du!==null && du<=0 && it.billing_cycle!=="once";
+    return '<div class="item'+(it.active?"":" inactive")+'">'
+      +'<div class="info" onclick="openForm(\''+it.id+'\')" style="cursor:pointer">'
+        +'<div class="name">'+esc(it.name)+'</div>'
+        +'<div class="meta">'+esc(it.payment_method||"No card set")+' · '+cap(it.billing_cycle)+(it.notes?' · '+esc(it.notes):'')+'</div>'
+      +'</div>'
+      +'<div class="right">'
+        +(it.amount?'<div class="amt">'+fmt(it.amount,it.currency)+'</div>':'')
+        +'<div>'+badge+'</div>'
+        +(canAdvance?'<div class="rowbtns" style="margin-top:6px"><button class="mini" onclick="markPaid(\''+it.id+'\')">Mark paid ✓</button></div>':'')
+      +'</div>'
+    +'</div>';
+  }).join("");
+}
+function setFilter(f){ filter=f; render(); }
+function esc(s){ return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function cap(s){ return s ? s[0].toUpperCase()+s.slice(1) : ""; }
+function prettyDate(d){ return new Date(d+"T00:00:00").toLocaleDateString(undefined,{day:"numeric",month:"short"}); }
+
+/* ---------- form ---------- */
+function openForm(id){
+  editingId = id || null;
+  const it = id ? items.find(x=>x.id===id) : null;
+  $("formTitle").textContent = it ? "Edit subscription" : "Add subscription";
+  $("f_name").value = it?.name || "";
+  $("f_amount").value = it?.amount ?? "";
+  $("f_currency").value = it?.currency || localStorage.getItem("lastCurrency") || "USD";
+  $("f_cycle").value = it?.billing_cycle || "monthly";
+  $("f_due").value = it?.next_due || "";
+  $("f_method").value = it?.payment_method || "";
+  $("f_notes").value = it?.notes || "";
+  $("f_active").checked = it ? it.active : true;
+  $("deleteBtn").style.display = it ? "block" : "none";
+  $("overlay").classList.add("open");
+}
+function closeForm(){ $("overlay").classList.remove("open"); }
+async function saveItem(){
+  const name = $("f_name").value.trim();
+  if(!name){ alert("Name is required"); return; }
+  $("saveBtn").disabled = true;
+  const rec = {
+    name,
+    amount: $("f_amount").value ? Number($("f_amount").value) : null,
+    currency: $("f_currency").value,
+    billing_cycle: $("f_cycle").value,
+    next_due: $("f_due").value || null,
+    payment_method: $("f_method").value.trim() || null,
+    notes: $("f_notes").value.trim() || null,
+    active: $("f_active").checked
+  };
+  localStorage.setItem("lastCurrency", rec.currency);
+  const q = editingId
+    ? sb.from("subscriptions").update(rec).eq("id", editingId)
+    : sb.from("subscriptions").insert(rec);
+  const { error } = await q;
+  $("saveBtn").disabled = false;
+  if(error){ alert("Save failed: "+error.message); return; }
+  closeForm(); await load();
+}
+async function delItem(){
+  if(!editingId || !confirm("Delete this subscription?")) return;
+  const { error } = await sb.from("subscriptions").delete().eq("id", editingId);
+  if(error){ alert("Delete failed: "+error.message); return; }
+  closeForm(); await load();
+}
+async function markPaid(id){
+  const it = items.find(x=>x.id===id);
+  if(!it || !it.next_due) return;
+  let next = it.next_due;
+  do { next = addCycle(next, it.billing_cycle); } while(next && daysUntil(next) <= 0);
+  if(!next) return;
+  const { error } = await sb.from("subscriptions").update({ next_due: next }).eq("id", id);
+  if(error){ alert("Update failed: "+error.message); return; }
+  await load();
+}
+
+init();
+</script>
+</body>
+</html>
