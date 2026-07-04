@@ -94,11 +94,12 @@
   <p>Sign in with your email to see your subscriptions on any device.</p>
   <div id="stepEmail">
     <input id="email" type="email" placeholder="you@email.com" autocomplete="email">
-    <button class="btn" id="sendBtn" onclick="sendCode()">Send login code</button>
+    <button class="btn" id="sendBtn" onclick="sendCode()">Send login link</button>
   </div>
   <div id="stepCode" style="display:none">
-    <input id="code" type="text" inputmode="numeric" placeholder="6-digit code" autocomplete="one-time-code">
-    <button class="btn" id="verifyBtn" onclick="verifyCode()">Sign in</button>
+    <p style="margin-bottom:12px">Now open your email <b>on this device</b> and tap the <b>Sign in</b> link. You'll come right back here, signed in.</p>
+    <input id="code" type="text" inputmode="numeric" placeholder="Or enter code (if email shows one)" autocomplete="one-time-code">
+    <button class="btn" id="verifyBtn" onclick="verifyCode()">Sign in with code</button>
     <button class="btn-ghost" onclick="backToEmail()">Use a different email</button>
   </div>
   <div id="authMsg" class="msg"></div>
@@ -167,7 +168,7 @@
 <script>
 const SUPABASE_URL = "https://anpvflizwcmyefbxsfpx.supabase.co";
 const SUPABASE_KEY = "sb_publishable_Va_eUdkFSmtD4uKqNIvppw_wlB1eEYJ";
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { flowType: "implicit", detectSessionInUrl: true } });
 
 let items = [];
 let editingId = null;
@@ -202,7 +203,7 @@ async function sendCode(){
   if(error){ setMsg(error.message, true); return; }
   pendingEmail = email;
   $("stepEmail").style.display="none"; $("stepCode").style.display="block";
-  setMsg("Check your email — enter the 6-digit code, or just tap the login link in the email.");
+  setMsg("Login link sent to " + email + ".");
 }
 async function verifyCode(){
   const token = $("code").value.trim();
