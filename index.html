@@ -3,21 +3,21 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#1B1A16">
+<meta name="theme-color" content="#14161C">
 <meta name="color-scheme" content="dark">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Subscriptions">
 <title>Subscriptions</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%231D9E75'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='%231B1A16' font-family='Georgia'>S</text></svg>">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%23C9A86A'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='%2314161C' font-family='Georgia'>S</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=Public+Sans:wght@400;500&display=swap">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root{
-    --bg:#1B1A16; --sheet:#232119; --line:#2B2924; --line2:#3A382F;
-    --ink:#EDE9DF; --muted:#8F8A7C; --green:#1D9E75; --mint:#9FE1CB; --terra:#F0997B;
+    --bg:#14161C; --sheet:#1B1E26; --line:#23262E; --line2:#333845;
+    --ink:#E8E4D8; --muted:#7A7E8A; --green:#C9A86A; --mint:#C9A86A; --terra:#C08466;
     color-scheme: dark;
   }
   *{box-sizing:border-box;margin:0;padding:0}
@@ -69,7 +69,7 @@
   .item.inactive{opacity:.45}
   .paybtn{flex:0 0 auto;width:38px;height:38px;border:1px solid var(--green);border-radius:50%;color:var(--green);display:flex;align-items:center;justify-content:center;font-size:1rem}
   .paybtn:active{background:var(--green);color:var(--bg)}
-  .offbar{display:none;background:rgba(240,153,123,.12);color:var(--terra);font-size:.78rem;padding:9px 14px;border-radius:10px;margin-top:14px;text-align:center}
+  .offbar{display:none;background:rgba(192,132,102,.12);color:var(--terra);font-size:.78rem;padding:9px 14px;border-radius:10px;margin-top:14px;text-align:center}
   body.off .fab, body.off .addbtn, body.off .paybtn{opacity:.3;pointer-events:none}
   .empty{text-align:center;color:var(--muted);padding:44px 16px;font-size:.88rem}
 
@@ -178,7 +178,7 @@
     <button class="tbtn" onclick="openAccts()">Bank accounts</button>
     <button class="tbtn" onclick="changePassword()">Change password</button>
     <button class="tbtn" onclick="signOut()">Sign out</button>
-    <span class="tbtn" id="verLabel" style="cursor:default;opacity:.6">v3.5</span>
+    <span class="tbtn" id="verLabel" style="cursor:default;opacity:.6">v3.6</span>
   </div>
 
   <button class="fab" onclick="openForm()" aria-label="Add subscription">+</button>
@@ -245,7 +245,7 @@
 </div>
 
 <script>
-const APP_VERSION = "3.5";
+const APP_VERSION = "3.6";
 const SUPABASE_URL = "https://anpvflizwcmyefbxsfpx.supabase.co";
 const SUPABASE_KEY = "sb_publishable_Va_eUdkFSmtD4uKqNIvppw_wlB1eEYJ";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { flowType: "implicit", detectSessionInUrl: true } });
@@ -688,5 +688,5 @@ checkForUpdate();
 init();
 </script>
 </body>
-<!-- v3.5 -->
+<!-- v3.6 -->
 </html>
