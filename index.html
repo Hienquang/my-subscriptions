@@ -3,132 +3,137 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>My Subscriptions</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💳</text></svg>">
+<meta name="theme-color" content="#1B1A16">
+<meta name="color-scheme" content="dark">
+<title>Subscriptions</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%231D9E75'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='%231B1A16' font-family='Georgia'>S</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=Public+Sans:wght@400;500&display=swap">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root{
-    --bg:#f6f7f9; --card:#ffffff; --ink:#1a1d21; --muted:#6b7280;
-    --accent:#4f46e5; --accent-soft:#eef2ff; --line:#e5e7eb;
-    --red:#dc2626; --red-soft:#fef2f2; --amber:#b45309; --amber-soft:#fffbeb;
-    --green:#047857; --green-soft:#ecfdf5;
-    --radius:14px;
+    --bg:#1B1A16; --sheet:#232119; --line:#2B2924; --line2:#3A382F;
+    --ink:#EDE9DF; --muted:#8F8A7C; --green:#1D9E75; --mint:#9FE1CB; --terra:#F0997B;
+    color-scheme: dark;
   }
   *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;-webkit-font-smoothing:antialiased}
-  .wrap{max-width:640px;margin:0 auto;padding:20px 16px 90px}
-  header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
-  h1{font-size:1.3rem;font-weight:700}
-  .sub{color:var(--muted);font-size:.85rem}
-  button{font:inherit;cursor:pointer;border:none;border-radius:10px}
-  .btn{background:var(--accent);color:#fff;padding:12px 18px;font-weight:600;font-size:.95rem}
-  .btn:disabled{opacity:.5;cursor:default}
-  .btn-ghost{background:transparent;color:var(--muted);padding:8px 12px;font-size:.85rem}
-  .btn-soft{background:var(--accent-soft);color:var(--accent);padding:8px 14px;font-weight:600;font-size:.85rem}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
+  html{background:var(--bg)}
+  body{font-family:'Public Sans',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;-webkit-font-smoothing:antialiased}
+  .serif{font-family:'Fraunces',Georgia,serif}
+  .wrap{max-width:560px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 28px) 20px 110px}
+  button{font:inherit;cursor:pointer;border:none;background:none;color:inherit}
 
-  /* auth */
-  .auth{max-width:400px;margin:12vh auto 0;text-align:center}
-  .auth h1{margin-bottom:6px}
-  .auth p{color:var(--muted);font-size:.9rem;margin-bottom:20px}
-  .auth input{width:100%;padding:13px 14px;border:1px solid var(--line);border-radius:10px;font-size:1rem;margin-bottom:12px;background:#fff}
-  .auth input:focus{outline:2px solid var(--accent);border-color:transparent}
-  .auth .btn{width:100%}
-  .msg{font-size:.85rem;margin-top:12px;color:var(--muted)}
-  .msg.err{color:var(--red)}
+  header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px}
+  h1{font-family:'Fraunces',Georgia,serif;font-size:1.35rem;font-weight:500;letter-spacing:.01em}
+  .sub{color:var(--muted);font-size:.75rem;margin-top:4px}
+  .hbtns{display:flex;align-items:center;gap:14px}
+  .tbtn{color:var(--muted);font-size:.8rem;padding:4px 0}
+  .tbtn:hover{color:var(--ink)}
+  .addbtn{border:1px solid var(--line2);border-radius:10px;padding:8px 14px;font-size:.85rem;color:var(--ink)}
+  .addbtn:hover{border-color:var(--muted)}
 
-  /* summary */
-  .summary{display:flex;gap:10px;margin-bottom:16px}
-  .stat{flex:1;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px}
-  .stat .label{font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:4px}
-  .stat .value{font-size:1.15rem;font-weight:700}
+  .hero{margin:22px 0 6px}
+  .total{font-size:1.9rem;font-weight:500;color:var(--mint)}
+  .total .per{font-family:'Public Sans',sans-serif;font-size:.75rem;color:var(--muted);font-weight:400;margin-left:4px}
+  .duesoon{font-size:.8rem;color:var(--muted);margin-top:6px}
+  .duesoon.warn{color:var(--terra)}
 
-  /* filters */
-  .chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;margin-bottom:12px;-webkit-overflow-scrolling:touch}
-  .chip{flex:0 0 auto;background:var(--card);border:1px solid var(--line);color:var(--muted);border-radius:999px;padding:7px 14px;font-size:.82rem;font-weight:500}
-  .chip.on{background:var(--ink);border-color:var(--ink);color:#fff}
+  .chips{display:flex;gap:8px;overflow-x:auto;padding:14px 0 4px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .chips::-webkit-scrollbar{display:none}
+  .chip{flex:0 0 auto;border:1px solid var(--line2);color:var(--muted);border-radius:999px;padding:6px 13px;font-size:.78rem}
+  .chip.on{color:var(--ink);border-color:var(--muted)}
 
-  /* list */
-  .item{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin-bottom:10px}
-  .item .info{flex:1;min-width:0}
-  .item .name{font-weight:600;font-size:.98rem}
-  .item .meta{color:var(--muted);font-size:.8rem;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .item{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:15px 0;border-top:1px solid var(--line)}
+  #list .item:first-child{border-top:none}
+  .item .info{flex:1;min-width:0;cursor:pointer}
+  .item .name{font-size:.95rem}
+  .item .meta{color:var(--muted);font-size:.75rem;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .item .right{text-align:right}
-  .item .amt{font-weight:700;font-size:.95rem}
-  .badge{display:inline-block;font-size:.72rem;font-weight:600;padding:3px 8px;border-radius:999px;margin-top:3px}
-  .b-over{background:var(--red-soft);color:var(--red)}
-  .b-soon{background:var(--amber-soft);color:var(--amber)}
-  .b-ok{background:var(--green-soft);color:var(--green)}
-  .b-off{background:var(--line);color:var(--muted)}
-  .item.inactive{opacity:.55}
-  .empty{text-align:center;color:var(--muted);padding:48px 16px;font-size:.92rem}
+  .item .amt{font-family:'Fraunces',Georgia,serif;font-size:.95rem}
+  .due{font-size:.75rem;color:var(--muted);margin-top:3px}
+  .due.hot{color:var(--terra)}
+  .due.near{color:var(--ink)}
+  .item.inactive{opacity:.45}
+  .paybtn{color:var(--green);font-size:.75rem;padding:4px 0 0;font-weight:500}
+  .empty{text-align:center;color:var(--muted);padding:56px 16px;font-size:.9rem;border-top:1px solid var(--line);margin-top:14px}
 
-  /* fab */
-  .fab{position:fixed;right:20px;bottom:24px;width:56px;height:56px;border-radius:50%;background:var(--accent);color:#fff;font-size:1.7rem;line-height:1;box-shadow:0 6px 16px rgba(79,70,229,.35);display:flex;align-items:center;justify-content:center}
+  .fab{position:fixed;right:22px;bottom:calc(env(safe-area-inset-bottom) + 24px);width:54px;height:54px;border-radius:50%;background:var(--green);color:var(--bg);font-size:1.6rem;line-height:1;display:flex;align-items:center;justify-content:center}
+  @media (min-width:641px){.fab{display:none}}
+  @media (max-width:640px){.addbtn{display:none}}
 
-  /* modal */
-  .overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:flex-end;justify-content:center;z-index:10}
+  .auth{max-width:360px;margin:16vh auto 0;padding:0 20px;text-align:center}
+  .auth h1{font-size:1.5rem;margin-bottom:8px}
+  .auth p{color:var(--muted);font-size:.85rem;margin-bottom:24px}
+  .auth input{width:100%;padding:13px 14px;border:1px solid var(--line2);border-radius:10px;font-size:1rem;margin-bottom:12px;background:transparent;color:var(--ink)}
+  .auth input::placeholder{color:var(--muted)}
+  .auth input:focus{outline:none;border-color:var(--green)}
+  .btn{width:100%;background:var(--green);color:var(--bg);padding:13px;border-radius:10px;font-weight:500;font-size:.95rem}
+  .btn:disabled{opacity:.5}
+  .ghost{display:block;width:100%;color:var(--muted);font-size:.8rem;padding:10px 0}
+  .ghost:hover{color:var(--ink)}
+  .msg{font-size:.8rem;margin-top:10px;color:var(--muted);line-height:1.5}
+  .msg.err{color:var(--terra)}
+
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:flex-end;justify-content:center;z-index:10}
   .overlay.open{display:flex}
-  .sheet{background:#fff;width:100%;max-width:640px;border-radius:20px 20px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom));max-height:90vh;overflow-y:auto}
-  .sheet h2{font-size:1.05rem;margin-bottom:14px}
+  .sheet{background:var(--sheet);width:100%;max-width:560px;border-radius:20px 20px 0 0;padding:22px 20px calc(24px + env(safe-area-inset-bottom));max-height:92vh;overflow-y:auto;border-top:1px solid var(--line2)}
+  .sheet h2{font-family:'Fraunces',Georgia,serif;font-size:1.05rem;font-weight:500;margin-bottom:16px}
   .field{margin-bottom:12px}
-  .field label{display:block;font-size:.78rem;font-weight:600;color:var(--muted);margin-bottom:5px}
-  .field input,.field select,.field textarea{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;font-size:.95rem;background:#fff}
-  .field input:focus,.field select:focus,.field textarea:focus{outline:2px solid var(--accent);border-color:transparent}
+  .field label{display:block;font-size:.72rem;color:var(--muted);margin-bottom:5px}
+  .field input,.field select,.field textarea{width:100%;padding:10px 12px;border:1px solid var(--line2);border-radius:9px;font-size:.9rem;background:transparent;color:var(--ink);font-family:inherit}
+  .field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--green)}
+  .field select option{background:var(--sheet)}
   .row2{display:flex;gap:10px}
   .row2 .field{flex:1}
-  .sheet .actions{display:flex;gap:10px;margin-top:16px}
-  .sheet .actions .btn{flex:1}
-  .btn-danger{background:var(--red-soft);color:var(--red);padding:12px 16px;font-weight:600}
-  .check{display:flex;align-items:center;gap:8px;font-size:.9rem;margin-bottom:12px}
-  .check input{width:18px;height:18px;accent-color:var(--accent)}
-  .rowbtns{display:flex;gap:8px;flex-direction:column}
-  .mini{background:var(--accent-soft);color:var(--accent);padding:7px 10px;font-size:.75rem;font-weight:600;white-space:nowrap}
+  .check{display:flex;align-items:center;gap:8px;font-size:.85rem;margin:4px 0 14px}
+  .check input{width:17px;height:17px;accent-color:var(--green)}
+  .actions{display:flex;gap:10px;margin-top:8px}
+  .actions .btn{flex:1}
+  .danger{border:1px solid var(--line2);color:var(--terra);padding:13px 16px;border-radius:10px;font-size:.9rem}
 </style>
 </head>
 <body>
 
-<!-- AUTH -->
-<div id="authView" class="wrap auth" style="display:none">
-  <h1>💳 My Subscriptions</h1>
+<div id="authView" class="auth" style="display:none">
+  <h1 class="serif">Subscriptions</h1>
   <p>Sign in to see your subscriptions on any device.</p>
   <input id="email" type="email" placeholder="you@email.com" autocomplete="email">
   <input id="password" type="password" placeholder="Password" autocomplete="current-password">
   <button class="btn" id="signInBtn" onclick="signIn()">Sign in</button>
-  <button class="btn-ghost" onclick="signUpNew()">New here? Create an account</button>
-  <button class="btn-ghost" onclick="sendLink()">Forgot password? Email me a sign-in link</button>
+  <button class="ghost" onclick="signUpNew()">New here? Create an account</button>
+  <button class="ghost" onclick="sendLink()">Forgot password? Email me a sign-in link</button>
   <div id="authMsg" class="msg"></div>
 </div>
 
-<!-- APP -->
 <div id="appView" class="wrap" style="display:none">
   <header>
     <div>
-      <h1>My Subscriptions</h1>
+      <h1>Subscriptions</h1>
       <div class="sub" id="userEmail"></div>
     </div>
-    <div>
-      <button class="btn-ghost" onclick="changePassword()">Password</button>
-      <button class="btn-ghost" onclick="signOut()">Sign out</button>
+    <div class="hbtns">
+      <button class="tbtn" onclick="changePassword()">Password</button>
+      <button class="tbtn" onclick="signOut()">Sign out</button>
+      <button class="addbtn" onclick="openForm()">+ Add</button>
     </div>
   </header>
 
-  <div class="summary">
-    <div class="stat"><div class="label">Monthly total</div><div class="value" id="totMonthly">–</div></div>
-    <div class="stat"><div class="label">Due in 7 days</div><div class="value" id="dueSoonCount">–</div></div>
+  <div class="hero">
+    <div class="total serif" id="totMonthly">—</div>
+    <div class="duesoon" id="dueLine"></div>
   </div>
 
   <div class="chips" id="chips"></div>
   <div id="list"></div>
 
-  <button class="fab" onclick="openForm()">+</button>
+  <button class="fab" onclick="openForm()" aria-label="Add subscription">+</button>
 </div>
 
-<!-- FORM -->
 <div class="overlay" id="overlay" onclick="if(event.target===this)closeForm()">
   <div class="sheet">
     <h2 id="formTitle">Add subscription</h2>
-    <div class="field"><label>Name *</label><input id="f_name" placeholder="Netflix, iCloud, Gym…"></div>
+    <div class="field"><label>Name</label><input id="f_name" placeholder="Netflix, iCloud, gym…"></div>
     <div class="row2">
       <div class="field"><label>Amount</label><input id="f_amount" type="number" step="0.01" inputmode="decimal" placeholder="15.99"></div>
       <div class="field"><label>Currency</label>
@@ -149,17 +154,17 @@
       </div>
       <div class="field"><label>Next bill due</label><input id="f_due" type="date"></div>
     </div>
-    <div class="field"><label>Paid with (bank account / card)</label>
-      <input id="f_method" list="methods" placeholder="e.g. DBS Visa •1234">
+    <div class="field"><label>Paid with (bank account or card)</label>
+      <input id="f_method" list="methods" placeholder="DBS Visa •1234">
       <datalist id="methods"></datalist>
     </div>
     <div class="field"><label>Notes</label><textarea id="f_notes" rows="2" placeholder="Shared with family, cancel before trial ends…"></textarea></div>
-    <div class="check"><input type="checkbox" id="f_active" checked><label for="f_active" style="margin:0;font-size:.9rem;color:var(--ink)">Active</label></div>
+    <div class="check"><input type="checkbox" id="f_active" checked><label for="f_active" style="margin:0;font-size:.85rem;color:var(--ink)">Active</label></div>
     <div class="actions">
-      <button class="btn-danger" id="deleteBtn" style="display:none" onclick="delItem()">Delete</button>
+      <button class="danger" id="deleteBtn" style="display:none" onclick="delItem()">Delete</button>
       <button class="btn" id="saveBtn" onclick="saveItem()">Save</button>
     </div>
-    <button class="btn-ghost" style="width:100%;margin-top:8px" onclick="closeForm()">Cancel</button>
+    <button class="ghost" style="margin-top:10px" onclick="closeForm()">Cancel</button>
   </div>
 </div>
 
@@ -171,13 +176,11 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { flowType:
 let items = [];
 let editingId = null;
 let filter = "all";
-let pendingEmail = null;
 
 const $ = id => document.getElementById(id);
 const fmt = (n,c) => (c||"") + " " + Number(n).toFixed(2);
 const today = () => { const d=new Date(); return new Date(d.getFullYear(),d.getMonth(),d.getDate()); };
 
-/* ---------- auth ---------- */
 async function init(){
   const { data:{ session } } = await sb.auth.getSession();
   session ? showApp(session) : showAuth();
@@ -229,7 +232,6 @@ async function changePassword(){
 function setMsg(t, err){ const m=$("authMsg"); m.textContent=t; m.className="msg"+(err?" err":""); }
 async function signOut(){ await sb.auth.signOut(); }
 
-/* ---------- data ---------- */
 async function load(){
   const { data, error } = await sb.from("subscriptions").select("*");
   if(error){ alert("Could not load: "+error.message); return; }
@@ -237,7 +239,6 @@ async function load(){
   render();
 }
 
-/* ---------- helpers ---------- */
 function monthlyEquiv(it){
   if(!it.amount || !it.active) return 0;
   const a = Number(it.amount);
@@ -254,33 +255,40 @@ function addCycle(dateStr, cycle){
   else if(cycle==="quarterly") d.setMonth(d.getMonth()+3);
   else if(cycle==="yearly") d.setFullYear(d.getFullYear()+1);
   else return null;
-  return d.toISOString().slice(0,10);
+  const p = n => String(n).padStart(2,"0");
+  return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate());
 }
 
-/* ---------- render ---------- */
 function render(){
-  // totals per currency
   const totals = {};
-  let dueSoon = 0;
+  let dueSoon = 0, overdue = 0;
   items.forEach(it=>{
     const m = monthlyEquiv(it);
     if(m>0) totals[it.currency||"?"] = (totals[it.currency||"?"]||0)+m;
     const du = daysUntil(it.next_due);
-    if(it.active && du!==null && du>=0 && du<=7) dueSoon++;
+    if(it.active && du!==null){
+      if(du<0) overdue++;
+      else if(du<=7) dueSoon++;
+    }
   });
   const tParts = Object.entries(totals).map(([c,v])=>fmt(v,c));
-  $("totMonthly").textContent = tParts.length ? tParts.join(" + ") : "—";
-  $("dueSoonCount").textContent = dueSoon;
+  $("totMonthly").innerHTML = tParts.length
+    ? tParts.join(" + ") + '<span class="per">/ month</span>'
+    : "—";
+  const bits = [];
+  if(overdue) bits.push(overdue + " overdue");
+  if(dueSoon) bits.push(dueSoon + " due this week");
+  $("dueLine").textContent = bits.length ? bits.join(" · ") : "nothing due this week";
+  $("dueLine").className = "duesoon" + (bits.length ? " warn" : "");
 
-  // payment-method chips
   const methods = [...new Set(items.map(i=>i.payment_method).filter(Boolean))].sort();
-  $("chips").innerHTML =
-    ['<button class="chip'+(filter==="all"?" on":"")+'" onclick="setFilter(\'all\')">All</button>']
-    .concat(methods.map(m=>'<button class="chip'+(filter===m?" on":"")+'" onclick="setFilter('+JSON.stringify(m).replace(/"/g,"&quot;")+')">'+esc(m)+'</button>'))
-    .join("");
+  $("chips").innerHTML = methods.length
+    ? ['<button class="chip'+(filter==="all"?" on":"")+'" onclick="setFilter(&quot;all&quot;)">All</button>']
+      .concat(methods.map(m=>'<button class="chip'+(filter===m?" on":"")+'" data-m="'+esc(m)+'" onclick="setFilter(this.dataset.m)">'+esc(m)+'</button>'))
+      .join("")
+    : "";
   $("methods").innerHTML = methods.map(m=>'<option value="'+esc(m)+'">').join("");
 
-  // list: active first, sorted by due date
   const shown = items.filter(i=>filter==="all"||i.payment_method===filter)
     .sort((a,b)=>{
       if(a.active!==b.active) return a.active?-1:1;
@@ -289,38 +297,36 @@ function render(){
     });
 
   if(!shown.length){
-    $("list").innerHTML = '<div class="empty">No subscriptions yet.<br>Tap <b>+</b> to add your first one.</div>';
+    $("list").innerHTML = '<div class="empty">No subscriptions yet.<br>Tap + to add your first one.</div>';
     return;
   }
   $("list").innerHTML = shown.map(it=>{
     const du = daysUntil(it.next_due);
-    let badge="";
-    if(!it.active) badge='<span class="badge b-off">Paused</span>';
-    else if(du===null) badge="";
-    else if(du<0) badge='<span class="badge b-over">Overdue '+(-du)+'d</span>';
-    else if(du===0) badge='<span class="badge b-over">Due today</span>';
-    else if(du<=7) badge='<span class="badge b-soon">Due in '+du+'d</span>';
-    else badge='<span class="badge b-ok">Due '+prettyDate(it.next_due)+'</span>';
+    let due="";
+    if(!it.active) due='<div class="due">paused</div>';
+    else if(du===null) due="";
+    else if(du<0) due='<div class="due hot">overdue '+(-du)+'d</div>';
+    else if(du===0) due='<div class="due hot">due today</div>';
+    else if(du<=7) due='<div class="due near">in '+du+' day'+(du>1?"s":"")+'</div>';
+    else due='<div class="due">'+prettyDate(it.next_due)+'</div>';
     const canAdvance = it.active && it.next_due && du!==null && du<=0 && it.billing_cycle!=="once";
     return '<div class="item'+(it.active?"":" inactive")+'">'
-      +'<div class="info" onclick="openForm(\''+it.id+'\')" style="cursor:pointer">'
+      +'<div class="info" onclick="openForm(&quot;'+it.id+'&quot;)">'
         +'<div class="name">'+esc(it.name)+'</div>'
-        +'<div class="meta">'+esc(it.payment_method||"No card set")+' · '+cap(it.billing_cycle)+(it.notes?' · '+esc(it.notes):'')+'</div>'
+        +'<div class="meta">'+esc(it.payment_method||"no card set")+' · '+it.billing_cycle+(it.notes?' · '+esc(it.notes):'')+'</div>'
       +'</div>'
       +'<div class="right">'
         +(it.amount?'<div class="amt">'+fmt(it.amount,it.currency)+'</div>':'')
-        +'<div>'+badge+'</div>'
-        +(canAdvance?'<div class="rowbtns" style="margin-top:6px"><button class="mini" onclick="markPaid(\''+it.id+'\')">Mark paid ✓</button></div>':'')
+        +due
+        +(canAdvance?'<button class="paybtn" onclick="markPaid(&quot;'+it.id+'&quot;)">mark paid ✓</button>':'')
       +'</div>'
     +'</div>';
   }).join("");
 }
 function setFilter(f){ filter=f; render(); }
 function esc(s){ return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
-function cap(s){ return s ? s[0].toUpperCase()+s.slice(1) : ""; }
 function prettyDate(d){ return new Date(d+"T00:00:00").toLocaleDateString(undefined,{day:"numeric",month:"short"}); }
 
-/* ---------- form ---------- */
 function openForm(id){
   editingId = id || null;
   const it = id ? items.find(x=>x.id===id) : null;
@@ -351,7 +357,7 @@ async function saveItem(){
     notes: $("f_notes").value.trim() || null,
     active: $("f_active").checked
   };
-  localStorage.setItem("lastCurrency", rec.currency);
+  try{ localStorage.setItem("lastCurrency", rec.currency); }catch(e){}
   const q = editingId
     ? sb.from("subscriptions").update(rec).eq("id", editingId)
     : sb.from("subscriptions").insert(rec);
