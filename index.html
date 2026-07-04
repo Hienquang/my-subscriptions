@@ -65,7 +65,10 @@
   .due.hot{color:var(--terra)}
   .due.near{color:var(--ink)}
   .item.inactive{opacity:.45}
-  .paybtn{color:var(--green);font-size:.73rem;padding:3px 0 0;font-weight:500}
+  .paybtn{flex:0 0 auto;width:38px;height:38px;border:1px solid var(--green);border-radius:50%;color:var(--green);display:flex;align-items:center;justify-content:center;font-size:1rem}
+  .paybtn:active{background:var(--green);color:var(--bg)}
+  .offbar{display:none;background:rgba(240,153,123,.12);color:var(--terra);font-size:.78rem;padding:9px 14px;border-radius:10px;margin-top:14px;text-align:center}
+  body.off .fab, body.off .addbtn, body.off .paybtn{opacity:.3;pointer-events:none}
   .empty{text-align:center;color:var(--muted);padding:44px 16px;font-size:.88rem}
 
   .fab{position:fixed;right:20px;bottom:calc(env(safe-area-inset-bottom) + 20px);width:52px;height:52px;border-radius:50%;background:var(--green);color:var(--bg);font-size:1.5rem;line-height:1;display:flex;align-items:center;justify-content:center}
@@ -105,7 +108,9 @@
   .field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--green)}
   .field select option{background:var(--sheet)}
   .row2{display:flex;gap:10px}
-  .row2 .field{flex:1}
+  .row2 .field{flex:1;min-width:0}
+  .field input{min-width:0}
+  input[type="date"]{-webkit-appearance:none;appearance:none;text-align:left;min-height:41px}
   .check{display:flex;align-items:center;gap:8px;font-size:.85rem;margin:4px 0 12px}
   .check input{width:17px;height:17px;accent-color:var(--green)}
   .actions{display:flex;gap:10px;margin-top:6px}
@@ -154,6 +159,7 @@
     <div class="total serif" id="totMonthly">—</div>
     <div class="duesoon" id="dueLine"></div>
   </div>
+  <div class="offbar" id="offbar">You're offline — showing saved data. Changes are disabled until you're back online.</div>
 
   <div class="viewbar">
     <div class="seg">
@@ -170,7 +176,7 @@
     <button class="tbtn" onclick="openAccts()">Bank accounts</button>
     <button class="tbtn" onclick="changePassword()">Change password</button>
     <button class="tbtn" onclick="signOut()">Sign out</button>
-    <span class="tbtn" id="verLabel" style="cursor:default;opacity:.6">v3.3</span>
+    <span class="tbtn" id="verLabel" style="cursor:default;opacity:.6">v3.4</span>
   </div>
 
   <button class="fab" onclick="openForm()" aria-label="Add subscription">+</button>
@@ -244,13 +250,13 @@
 </div>
 
 <script>
-const APP_VERSION = "3.3";
+const APP_VERSION = "3.4";
 const SUPABASE_URL = "https://anpvflizwcmyefbxsfpx.supabase.co";
 const SUPABASE_KEY = "sb_publishable_Va_eUdkFSmtD4uKqNIvppw_wlB1eEYJ";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { flowType: "implicit", detectSessionInUrl: true } });
 
 let items = [], accounts = [], lastPay = {};
-let editingId = null, payingId = null;
+let editingId = null, payingId = null, offline = false;
 let filter = "all";
 let view = localStorage.getItem("view") || "week";
 let tab = "this";
@@ -313,18 +319,40 @@ function setMsg(t, err){ const m=$("authMsg"); m.textContent=t; m.className="msg
 async function signOut(){ await sb.auth.signOut(); }
 
 /* ---------- data ---------- */
+function setOffline(v){
+  offline = v;
+  document.body.classList.toggle("off", v);
+  const b = $("offbar"); if(b) b.style.display = v ? "block" : "none";
+}
+function saveCache(){ try{ localStorage.setItem("cache", JSON.stringify({ items, accounts, lastPay })); }catch(e){} }
+function useCache(){
+  try{
+    const c = JSON.parse(localStorage.getItem("cache") || "null");
+    if(c){ items = c.items||[]; accounts = c.accounts||[]; lastPay = c.lastPay||{}; }
+  }catch(e){}
+  render();
+}
+window.addEventListener("online", () => { setOffline(false); load(); });
+window.addEventListener("offline", () => setOffline(true));
+
 async function load(){
-  const [s, a, p] = await Promise.all([
-    sb.from("subscriptions").select("*"),
-    sb.from("accounts").select("*").order("name"),
-    sb.from("payments").select("subscription_id, amount, paid_on").order("paid_on", { ascending:false }).limit(500)
-  ]);
-  if(s.error){ alert("Could not load: "+s.error.message); return; }
+  if(!navigator.onLine){ setOffline(true); useCache(); return; }
+  let s, a, p;
+  try{
+    [s, a, p] = await Promise.all([
+      sb.from("subscriptions").select("*"),
+      sb.from("accounts").select("*").order("name"),
+      sb.from("payments").select("subscription_id, amount, paid_on").order("paid_on", { ascending:false }).limit(500)
+    ]);
+  }catch(e){ setOffline(true); useCache(); return; }
+  if(s.error){ setOffline(true); useCache(); return; }
+  setOffline(false);
   items = s.data || [];
   accounts = a.data || [];
   lastPay = {};
   (p.data || []).forEach(r => { if(!(r.subscription_id in lastPay)) lastPay[r.subscription_id] = r; });
   await seedAccounts();
+  saveCache();
   render();
 }
 async function seedAccounts(){
@@ -464,8 +492,8 @@ function render(){
       +'<div class="right">'
         +(it.amount?'<div class="amt">'+fmt(it.amount,it.currency)+'</div>':'')
         +due
-        +(canPay?'<button class="paybtn" onclick="openPay(&quot;'+it.id+'&quot;)">mark paid ✓</button>':'')
       +'</div>'
+      +(canPay?'<button class="paybtn" aria-label="Mark '+esc(it.name)+' paid" title="Mark paid" onclick="openPay(&quot;'+it.id+'&quot;)">✓</button>':'')
     +'</div>';
   }).join("");
 }
@@ -488,6 +516,7 @@ function methodOptions(current){
   return opts.join("");
 }
 function openForm(id){
+  if(offline) return;
   editingId = id || null;
   const it = id ? items.find(x=>x.id===id) : null;
   $("formTitle").textContent = it ? "Edit subscription" : "Add subscription";
@@ -563,6 +592,7 @@ async function delItem(){
 
 /* ---------- mark paid ---------- */
 function openPay(id){
+  if(offline) return;
   const it = items.find(x=>x.id===id);
   if(!it) return;
   payingId = id;
@@ -600,7 +630,7 @@ async function confirmPay(){
 }
 
 /* ---------- accounts sheet ---------- */
-function openAccts(){ renderAccts(); $("acctOverlay").classList.add("open"); }
+function openAccts(){ if(offline){ alert("You're offline — account changes need a connection."); return; } renderAccts(); $("acctOverlay").classList.add("open"); }
 function closeAccts(){ $("acctOverlay").classList.remove("open"); render(); }
 function renderAccts(){
   const showAll = $("showInactive").checked;
@@ -667,5 +697,5 @@ checkForUpdate();
 init();
 </script>
 </body>
-<!-- v3.3 -->
+<!-- v3.4 -->
 </html>
