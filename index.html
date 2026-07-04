@@ -60,6 +60,7 @@
   .item.inactive{opacity:.45}
   .paybtn{color:var(--green);font-size:.75rem;padding:4px 0 0;font-weight:500}
   .empty{text-align:center;color:var(--muted);padding:56px 16px;font-size:.9rem;border-top:1px solid var(--line);margin-top:14px}
+  .foot{display:flex;justify-content:center;gap:28px;margin-top:56px;padding-top:20px;border-top:1px solid var(--line)}
 
   .fab{position:fixed;right:22px;bottom:calc(env(safe-area-inset-bottom) + 24px);width:54px;height:54px;border-radius:50%;background:var(--green);color:var(--bg);font-size:1.6rem;line-height:1;display:flex;align-items:center;justify-content:center}
   @media (min-width:641px){.fab{display:none}}
@@ -116,8 +117,6 @@
       <div class="sub" id="userEmail"></div>
     </div>
     <div class="hbtns">
-      <button class="tbtn" onclick="changePassword()">Password</button>
-      <button class="tbtn" onclick="signOut()">Sign out</button>
       <button class="addbtn" onclick="openForm()">+ Add</button>
     </div>
   </header>
@@ -129,6 +128,11 @@
 
   <div class="chips" id="chips"></div>
   <div id="list"></div>
+
+  <div class="foot">
+    <button class="tbtn" onclick="changePassword()">Change password</button>
+    <button class="tbtn" onclick="signOut()">Sign out</button>
+  </div>
 
   <button class="fab" onclick="openForm()" aria-label="Add subscription">+</button>
 </div>
