@@ -30,7 +30,6 @@
   header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px}
   h1{font-family:'Fraunces',Georgia,serif;font-size:1.35rem;font-weight:500;letter-spacing:.01em}
   .sub{color:var(--muted);font-size:.75rem;margin-top:4px}
-  .hbtns{display:flex;align-items:center;gap:14px}
   .tbtn{color:var(--muted);font-size:.8rem;padding:4px 0}
   .tbtn:hover{color:var(--ink)}
   .addbtn{border:1px solid var(--line2);border-radius:10px;padding:8px 14px;font-size:.85rem;color:var(--ink)}
@@ -41,6 +40,14 @@
   .total .per{font-family:'Public Sans',sans-serif;font-size:.75rem;color:var(--muted);font-weight:400;margin-left:4px}
   .duesoon{font-size:.8rem;color:var(--muted);margin-top:6px}
   .duesoon.warn{color:var(--terra)}
+
+  .viewbar{display:flex;justify-content:flex-end;margin-top:18px}
+  .seg{display:inline-flex;border:1px solid var(--line2);border-radius:10px;overflow:hidden}
+  .seg button{padding:7px 16px;font-size:.78rem;color:var(--muted)}
+  .seg button.on{background:var(--sheet);color:var(--ink)}
+  .tabs{display:flex;gap:22px;border-bottom:1px solid var(--line);margin-top:6px}
+  .tab{padding:0 0 10px;font-size:.85rem;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px}
+  .tab.on{color:var(--ink);border-color:var(--green)}
 
   .chips{display:flex;gap:8px;overflow-x:auto;padding:14px 0 4px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
   .chips::-webkit-scrollbar{display:none}
@@ -59,8 +66,7 @@
   .due.near{color:var(--ink)}
   .item.inactive{opacity:.45}
   .paybtn{color:var(--green);font-size:.75rem;padding:4px 0 0;font-weight:500}
-  .empty{text-align:center;color:var(--muted);padding:56px 16px;font-size:.9rem;border-top:1px solid var(--line);margin-top:14px}
-  .foot{display:flex;justify-content:center;gap:28px;margin-top:56px;padding-top:20px;border-top:1px solid var(--line)}
+  .empty{text-align:center;color:var(--muted);padding:48px 16px;font-size:.9rem}
 
   .fab{position:fixed;right:22px;bottom:calc(env(safe-area-inset-bottom) + 24px);width:54px;height:54px;border-radius:50%;background:var(--green);color:var(--bg);font-size:1.6rem;line-height:1;display:flex;align-items:center;justify-content:center}
   @media (min-width:641px){.fab{display:none}}
@@ -95,6 +101,19 @@
   .actions{display:flex;gap:10px;margin-top:8px}
   .actions .btn{flex:1}
   .danger{border:1px solid var(--line2);color:var(--terra);padding:13px 16px;border-radius:10px;font-size:.9rem}
+  .lastpaid{font-size:.78rem;color:var(--muted);margin:-4px 0 12px}
+
+  .acct{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-top:1px solid var(--line)}
+  .acct:first-child{border-top:none}
+  .acct .nm{font-size:.9rem}
+  .acct .nm.off{color:var(--muted)}
+  .acct .nm .tag{font-size:.7rem;color:var(--muted);margin-left:6px}
+  .acctadd{display:flex;gap:10px;margin:14px 0 4px}
+  .acctadd input{flex:1;padding:10px 12px;border:1px solid var(--line2);border-radius:9px;font-size:.9rem;background:transparent;color:var(--ink)}
+  .acctadd input:focus{outline:none;border-color:var(--green)}
+  .acctadd button{border:1px solid var(--line2);border-radius:9px;padding:0 16px;font-size:.85rem}
+
+  .foot{display:flex;justify-content:center;gap:28px;margin-top:56px;padding-top:20px;border-top:1px solid var(--line)}
 </style>
 </head>
 <body>
@@ -116,9 +135,7 @@
       <h1>Subscriptions</h1>
       <div class="sub" id="userEmail"></div>
     </div>
-    <div class="hbtns">
-      <button class="addbtn" onclick="openForm()">+ Add</button>
-    </div>
+    <button class="addbtn" onclick="openForm()">+ Add</button>
   </header>
 
   <div class="hero">
@@ -126,10 +143,19 @@
     <div class="duesoon" id="dueLine"></div>
   </div>
 
+  <div class="viewbar">
+    <div class="seg">
+      <button id="segWeek" onclick="setView('week')">Week</button>
+      <button id="segMonth" onclick="setView('month')">Month</button>
+    </div>
+  </div>
+  <div class="tabs" id="tabs"></div>
+
   <div class="chips" id="chips"></div>
   <div id="list"></div>
 
   <div class="foot">
+    <button class="tbtn" onclick="openAccts()">Bank accounts</button>
     <button class="tbtn" onclick="changePassword()">Change password</button>
     <button class="tbtn" onclick="signOut()">Sign out</button>
   </div>
@@ -142,7 +168,7 @@
     <h2 id="formTitle">Add subscription</h2>
     <div class="field"><label>Name</label><input id="f_name" placeholder="Netflix, iCloud, gym…"></div>
     <div class="row2">
-      <div class="field"><label>Amount</label><input id="f_amount" type="number" step="0.01" inputmode="decimal" placeholder="15.99"></div>
+      <div class="field"><label>Planned amount</label><input id="f_amount" type="number" step="0.01" inputmode="decimal" placeholder="15.99"></div>
       <div class="field"><label>Currency</label>
         <select id="f_currency">
           <option>USD</option><option>SGD</option><option>MYR</option><option>EUR</option><option>GBP</option><option>AUD</option><option>JPY</option><option>KRW</option><option>HKD</option><option>THB</option><option>IDR</option><option>PHP</option><option>VND</option><option>INR</option><option>CAD</option><option>NZD</option><option>CNY</option><option>TWD</option>
@@ -152,20 +178,22 @@
     <div class="row2">
       <div class="field"><label>Billing cycle</label>
         <select id="f_cycle">
-          <option value="monthly">Monthly</option>
-          <option value="yearly">Yearly</option>
-          <option value="quarterly">Quarterly</option>
           <option value="weekly">Weekly</option>
+          <option value="biweekly">Every 2 weeks</option>
+          <option value="fourweekly">Every 4 weeks</option>
+          <option value="monthly" selected>Monthly</option>
+          <option value="quarterly">Quarterly</option>
+          <option value="yearly">Yearly</option>
           <option value="once">One-time</option>
         </select>
       </div>
       <div class="field"><label>Next bill due</label><input id="f_due" type="date"></div>
     </div>
-    <div class="field"><label>Paid with (bank account or card)</label>
-      <input id="f_method" list="methods" placeholder="DBS Visa •1234">
-      <datalist id="methods"></datalist>
+    <div class="field"><label>Paid with</label>
+      <select id="f_method"></select>
     </div>
     <div class="field"><label>Notes</label><textarea id="f_notes" rows="2" placeholder="Shared with family, cancel before trial ends…"></textarea></div>
+    <div class="lastpaid" id="f_lastpaid" style="display:none"></div>
     <div class="check"><input type="checkbox" id="f_active" checked><label for="f_active" style="margin:0;font-size:.85rem;color:var(--ink)">Active</label></div>
     <div class="actions">
       <button class="danger" id="deleteBtn" style="display:none" onclick="delItem()">Delete</button>
@@ -175,19 +203,38 @@
   </div>
 </div>
 
+<div class="overlay" id="acctOverlay" onclick="if(event.target===this)closeAccts()">
+  <div class="sheet">
+    <h2>Bank accounts</h2>
+    <div id="acctList"></div>
+    <div class="acctadd">
+      <input id="newAcct" placeholder="e.g. DBS Visa •1234">
+      <button onclick="addAcct()">Add</button>
+    </div>
+    <div class="check" style="margin-top:12px">
+      <input type="checkbox" id="showInactive" onchange="renderAccts()">
+      <label for="showInactive" style="margin:0;font-size:.85rem;color:var(--muted)">Show inactive accounts</label>
+    </div>
+    <button class="ghost" style="margin-top:8px" onclick="closeAccts()">Close</button>
+  </div>
+</div>
+
 <script>
 const SUPABASE_URL = "https://anpvflizwcmyefbxsfpx.supabase.co";
 const SUPABASE_KEY = "sb_publishable_Va_eUdkFSmtD4uKqNIvppw_wlB1eEYJ";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { flowType: "implicit", detectSessionInUrl: true } });
 
-let items = [];
+let items = [], accounts = [], lastPay = {};
 let editingId = null;
 let filter = "all";
+let view = localStorage.getItem("view") || "week";
+let tab = "this";
 
 const $ = id => document.getElementById(id);
 const fmt = (n,c) => (c||"") + " " + Number(n).toFixed(2);
 const today = () => { const d=new Date(); return new Date(d.getFullYear(),d.getMonth(),d.getDate()); };
 
+/* ---------- auth ---------- */
 async function init(){
   const { data:{ session } } = await sb.auth.getSession();
   session ? showApp(session) : showAuth();
@@ -227,7 +274,7 @@ async function sendLink(){
   setMsg("Sending…");
   const { error } = await sb.auth.signInWithOtp({ email, options:{ shouldCreateUser:true, emailRedirectTo: location.origin + location.pathname } });
   if(error){ setMsg(error.message, true); return; }
-  setMsg("Link sent to " + email + ". Open it on this device, then set a new password via the “Password” button.");
+  setMsg("Link sent to " + email + ". Open it on this device, then set a new password via “Change password”.");
 }
 async function changePassword(){
   const p = prompt("New password (at least 8 characters):");
@@ -239,17 +286,34 @@ async function changePassword(){
 function setMsg(t, err){ const m=$("authMsg"); m.textContent=t; m.className="msg"+(err?" err":""); }
 async function signOut(){ await sb.auth.signOut(); }
 
+/* ---------- data ---------- */
 async function load(){
-  const { data, error } = await sb.from("subscriptions").select("*");
-  if(error){ alert("Could not load: "+error.message); return; }
-  items = data || [];
+  const [s, a, p] = await Promise.all([
+    sb.from("subscriptions").select("*"),
+    sb.from("accounts").select("*").order("name"),
+    sb.from("payments").select("subscription_id, amount, paid_on").order("paid_on", { ascending:false }).limit(500)
+  ]);
+  if(s.error){ alert("Could not load: "+s.error.message); return; }
+  items = s.data || [];
+  accounts = a.data || [];
+  lastPay = {};
+  (p.data || []).forEach(r => { if(!(r.subscription_id in lastPay)) lastPay[r.subscription_id] = r; });
+  await seedAccounts();
   render();
 }
+async function seedAccounts(){
+  if(accounts.length) return;
+  const names = [...new Set(items.map(i=>i.payment_method).filter(Boolean))];
+  if(!names.length) return;
+  const { data, error } = await sb.from("accounts").insert(names.map(n=>({name:n}))).select();
+  if(!error && data) accounts = data.sort((x,y)=>x.name.localeCompare(y.name));
+}
 
+/* ---------- helpers ---------- */
 function monthlyEquiv(it){
   if(!it.amount || !it.active) return 0;
   const a = Number(it.amount);
-  return { monthly:a, yearly:a/12, quarterly:a/3, weekly:a*52/12, once:0 }[it.billing_cycle] ?? a;
+  return { weekly:a*52/12, biweekly:a*26/12, fourweekly:a*13/12, monthly:a, quarterly:a/3, yearly:a/12, once:0 }[it.billing_cycle] ?? a;
 }
 function daysUntil(d){
   if(!d) return null;
@@ -258,6 +322,8 @@ function daysUntil(d){
 function addCycle(dateStr, cycle){
   const d = new Date(dateStr+"T00:00:00");
   if(cycle==="weekly") d.setDate(d.getDate()+7);
+  else if(cycle==="biweekly") d.setDate(d.getDate()+14);
+  else if(cycle==="fourweekly") d.setDate(d.getDate()+28);
   else if(cycle==="monthly") d.setMonth(d.getMonth()+1);
   else if(cycle==="quarterly") d.setMonth(d.getMonth()+3);
   else if(cycle==="yearly") d.setFullYear(d.getFullYear()+1);
@@ -265,7 +331,22 @@ function addCycle(dateStr, cycle){
   const p = n => String(n).padStart(2,"0");
   return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate());
 }
+function periodEnds(){
+  const t = today();
+  if(view === "week"){
+    const monday = new Date(t); monday.setDate(t.getDate() - (t.getDay()+6)%7);
+    const e1 = new Date(monday); e1.setDate(monday.getDate()+7);
+    const e2 = new Date(monday); e2.setDate(monday.getDate()+14);
+    return { thisEnd:e1, nextEnd:e2 };
+  }
+  return {
+    thisEnd: new Date(t.getFullYear(), t.getMonth()+1, 1),
+    nextEnd: new Date(t.getFullYear(), t.getMonth()+2, 1)
+  };
+}
+const cycleLabel = c => ({weekly:"weekly", biweekly:"every 2 wks", fourweekly:"every 4 wks", monthly:"monthly", quarterly:"quarterly", yearly:"yearly", once:"one-time"}[c] || c);
 
+/* ---------- render ---------- */
 function render(){
   const totals = {};
   let dueSoon = 0, overdue = 0;
@@ -284,19 +365,34 @@ function render(){
     : "—";
   const bits = [];
   if(overdue) bits.push(overdue + " overdue");
-  if(dueSoon) bits.push(dueSoon + " due this week");
-  $("dueLine").textContent = bits.length ? bits.join(" · ") : "nothing due this week";
+  if(dueSoon) bits.push(dueSoon + " due in the next 7 days");
+  $("dueLine").textContent = bits.length ? bits.join(" · ") : "nothing due in the next 7 days";
   $("dueLine").className = "duesoon" + (bits.length ? " warn" : "");
+
+  $("segWeek").className = view==="week" ? "on" : "";
+  $("segMonth").className = view==="month" ? "on" : "";
+  const unit = view==="week" ? "week" : "month";
+  $("tabs").innerHTML =
+    '<button class="tab'+(tab==="this"?" on":"")+'" onclick="setTab(\'this\')">This '+unit+'</button>'
+   +'<button class="tab'+(tab==="next"?" on":"")+'" onclick="setTab(\'next\')">Next '+unit+'</button>'
+   +'<button class="tab'+(tab==="all"?" on":"")+'" onclick="setTab(\'all\')">All</button>';
 
   const methods = [...new Set(items.map(i=>i.payment_method).filter(Boolean))].sort();
   $("chips").innerHTML = methods.length
-    ? ['<button class="chip'+(filter==="all"?" on":"")+'" onclick="setFilter(&quot;all&quot;)">All</button>']
+    ? ['<button class="chip'+(filter==="all"?" on":"")+'" onclick="setFilter(&quot;all&quot;)">All accounts</button>']
       .concat(methods.map(m=>'<button class="chip'+(filter===m?" on":"")+'" data-m="'+esc(m)+'" onclick="setFilter(this.dataset.m)">'+esc(m)+'</button>'))
       .join("")
     : "";
-  $("methods").innerHTML = methods.map(m=>'<option value="'+esc(m)+'">').join("");
 
-  const shown = items.filter(i=>filter==="all"||i.payment_method===filter)
+  const { thisEnd, nextEnd } = periodEnds();
+  const shown = items.filter(i => filter==="all" || i.payment_method===filter)
+    .filter(i => {
+      if(tab === "all") return true;
+      if(!i.active || !i.next_due) return false;
+      const d = new Date(i.next_due+"T00:00:00");
+      if(tab === "this") return d < thisEnd;
+      return d >= thisEnd && d < nextEnd;
+    })
     .sort((a,b)=>{
       if(a.active!==b.active) return a.active?-1:1;
       const da=a.next_due||"9999", db=b.next_due||"9999";
@@ -304,7 +400,10 @@ function render(){
     });
 
   if(!shown.length){
-    $("list").innerHTML = '<div class="empty">No subscriptions yet.<br>Tap + to add your first one.</div>';
+    const txt = tab==="this" ? "Nothing due or overdue this "+unit+"."
+      : tab==="next" ? "Nothing due next "+unit+"."
+      : "No subscriptions yet.<br>Tap + to add your first one.";
+    $("list").innerHTML = '<div class="empty">'+txt+'</div>';
     return;
   }
   $("list").innerHTML = shown.map(it=>{
@@ -320,7 +419,7 @@ function render(){
     return '<div class="item'+(it.active?"":" inactive")+'">'
       +'<div class="info" onclick="openForm(&quot;'+it.id+'&quot;)">'
         +'<div class="name">'+esc(it.name)+'</div>'
-        +'<div class="meta">'+esc(it.payment_method||"no card set")+' · '+it.billing_cycle+(it.notes?' · '+esc(it.notes):'')+'</div>'
+        +'<div class="meta">'+esc(it.payment_method||"no account set")+' · '+cycleLabel(it.billing_cycle)+(it.notes?' · '+esc(it.notes):'')+'</div>'
       +'</div>'
       +'<div class="right">'
         +(it.amount?'<div class="amt">'+fmt(it.amount,it.currency)+'</div>':'')
@@ -331,9 +430,23 @@ function render(){
   }).join("");
 }
 function setFilter(f){ filter=f; render(); }
+function setView(v){ view=v; try{localStorage.setItem("view",v);}catch(e){} render(); }
+function setTab(t){ tab=t; render(); }
 function esc(s){ return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
 function prettyDate(d){ return new Date(d+"T00:00:00").toLocaleDateString(undefined,{day:"numeric",month:"short"}); }
 
+/* ---------- subscription form ---------- */
+function methodOptions(current){
+  const opts = ['<option value="">—</option>'];
+  accounts.forEach(a=>{
+    if(a.active || a.name===current)
+      opts.push('<option value="'+esc(a.name)+'"'+(a.name===current?" selected":"")+'>'+esc(a.name)+(a.active?"":" (inactive)")+'</option>');
+  });
+  if(current && !accounts.some(a=>a.name===current))
+    opts.push('<option value="'+esc(current)+'" selected>'+esc(current)+'</option>');
+  opts.push('<option value="__new">+ New account…</option>');
+  return opts.join("");
+}
 function openForm(id){
   editingId = id || null;
   const it = id ? items.find(x=>x.id===id) : null;
@@ -343,9 +456,22 @@ function openForm(id){
   $("f_currency").value = it?.currency || localStorage.getItem("lastCurrency") || "USD";
   $("f_cycle").value = it?.billing_cycle || "monthly";
   $("f_due").value = it?.next_due || "";
-  $("f_method").value = it?.payment_method || "";
+  $("f_method").innerHTML = methodOptions(it?.payment_method || "");
+  $("f_method").onchange = async e => {
+    if(e.target.value !== "__new") return;
+    const n = prompt("New bank account or card name:");
+    if(n && n.trim()){
+      const { data, error } = await sb.from("accounts").insert({ name:n.trim() }).select().single();
+      if(error){ alert("Could not add: "+error.message); e.target.value=""; return; }
+      accounts.push(data); accounts.sort((x,y)=>x.name.localeCompare(y.name));
+      $("f_method").innerHTML = methodOptions(data.name);
+    } else e.target.value = "";
+  };
   $("f_notes").value = it?.notes || "";
   $("f_active").checked = it ? it.active : true;
+  const lp = it && lastPay[it.id];
+  $("f_lastpaid").style.display = lp ? "block" : "none";
+  if(lp) $("f_lastpaid").textContent = "Last paid: " + (lp.amount!=null ? fmt(lp.amount, it.currency) : "—") + " on " + prettyDate(lp.paid_on);
   $("deleteBtn").style.display = it ? "block" : "none";
   $("overlay").classList.add("open");
 }
@@ -353,6 +479,7 @@ function closeForm(){ $("overlay").classList.remove("open"); }
 async function saveItem(){
   const name = $("f_name").value.trim();
   if(!name){ alert("Name is required"); return; }
+  const method = $("f_method").value;
   $("saveBtn").disabled = true;
   const rec = {
     name,
@@ -360,7 +487,7 @@ async function saveItem(){
     currency: $("f_currency").value,
     billing_cycle: $("f_cycle").value,
     next_due: $("f_due").value || null,
-    payment_method: $("f_method").value.trim() || null,
+    payment_method: (method && method!=="__new") ? method : null,
     notes: $("f_notes").value.trim() || null,
     active: $("f_active").checked
   };
@@ -382,17 +509,54 @@ async function delItem(){
 async function markPaid(id){
   const it = items.find(x=>x.id===id);
   if(!it || !it.next_due) return;
+  const planned = it.amount != null ? String(it.amount) : "";
+  const s = prompt("Amount actually paid for " + it.name + (it.currency ? " ("+it.currency+")" : "") + ":", planned);
+  if(s === null) return;
+  const actual = s.trim()==="" ? null : Number(s.replace(",", "."));
+  if(s.trim()!=="" && isNaN(actual)){ alert("That doesn't look like a number."); return; }
+  const { error: pErr } = await sb.from("payments").insert({ subscription_id: id, amount: actual, paid_on: it.next_due });
+  if(pErr){ alert("Could not record payment: "+pErr.message); return; }
   let next = it.next_due;
   do { next = addCycle(next, it.billing_cycle); } while(next && daysUntil(next) <= 0);
-  if(!next) return;
-  const { error } = await sb.from("subscriptions").update({ next_due: next }).eq("id", id);
-  if(error){ alert("Update failed: "+error.message); return; }
+  if(next){
+    const { error } = await sb.from("subscriptions").update({ next_due: next }).eq("id", id);
+    if(error){ alert("Update failed: "+error.message); return; }
+  }
   await load();
+}
+
+/* ---------- accounts sheet ---------- */
+function openAccts(){ renderAccts(); $("acctOverlay").classList.add("open"); }
+function closeAccts(){ $("acctOverlay").classList.remove("open"); render(); }
+function renderAccts(){
+  const showAll = $("showInactive").checked;
+  const list = accounts.filter(a => showAll || a.active);
+  $("acctList").innerHTML = list.length
+    ? list.map(a =>
+        '<div class="acct">'
+        +'<div class="nm'+(a.active?"":" off")+'">'+esc(a.name)+(a.active?"":'<span class="tag">inactive</span>')+'</div>'
+        +'<button class="tbtn" onclick="toggleAcct(\''+a.id+'\','+(!a.active)+')">'+(a.active?"Deactivate":"Reactivate")+'</button>'
+        +'</div>').join("")
+    : '<div class="empty" style="padding:24px 0">No accounts yet. Add your first one below.</div>';
+}
+async function addAcct(){
+  const n = $("newAcct").value.trim();
+  if(!n) return;
+  if(accounts.some(a=>a.name.toLowerCase()===n.toLowerCase())){ alert("That account already exists."); return; }
+  const { data, error } = await sb.from("accounts").insert({ name:n }).select().single();
+  if(error){ alert("Could not add: "+error.message); return; }
+  accounts.push(data); accounts.sort((x,y)=>x.name.localeCompare(y.name));
+  $("newAcct").value = "";
+  renderAccts();
+}
+async function toggleAcct(id, active){
+  const { error } = await sb.from("accounts").update({ active }).eq("id", id);
+  if(error){ alert("Could not update: "+error.message); return; }
+  const a = accounts.find(x=>x.id===id); if(a) a.active = active;
+  renderAccts();
 }
 
 init();
 </script>
 </body>
 </html>
-
-<!-- redeploy -->
