@@ -153,7 +153,6 @@
   <header>
     <div>
       <h1>Due</h1>
-      <div class="sub" id="userEmail"></div>
     </div>
     <button class="addbtn" onclick="openForm()">+ Add</button>
   </header>
@@ -179,7 +178,7 @@
     <button class="tbtn" onclick="openAccts()">Bank accounts</button>
     <button class="tbtn" onclick="changePassword()">Change password</button>
     <button class="tbtn" onclick="signOut()">Sign out</button>
-    <span class="tbtn" id="verLabel" style="cursor:default;opacity:.6">v3.7</span>
+    <span class="tbtn" id="verLabel" style="cursor:default;opacity:.6">v3.8</span>
   </div>
 
   <button class="fab" onclick="openForm()" aria-label="Add subscription">+</button>
@@ -246,7 +245,7 @@
 </div>
 
 <script>
-const APP_VERSION = "3.7";
+const APP_VERSION = "3.8";
 const SUPABASE_URL = "https://anpvflizwcmyefbxsfpx.supabase.co";
 const SUPABASE_KEY = "sb_publishable_Va_eUdkFSmtD4uKqNIvppw_wlB1eEYJ";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { flowType: "implicit", detectSessionInUrl: true } });
@@ -275,7 +274,6 @@ async function init(){
 function showAuth(){ $("appView").style.display="none"; $("authView").style.display="block"; }
 async function showApp(session){
   $("authView").style.display="none"; $("appView").style.display="block";
-  $("userEmail").textContent = session.user.email;
   await load();
 }
 async function signIn(){
@@ -689,5 +687,5 @@ checkForUpdate();
 init();
 </script>
 </body>
-<!-- v3.7 -->
+<!-- v3.8 -->
 </html>
