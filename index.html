@@ -38,6 +38,8 @@
   .hero{margin:20px 0 4px}
   .total{font-size:1.8rem;font-weight:500;color:var(--mint)}
   .total .per{font-family:'Public Sans',sans-serif;font-size:.75rem;color:var(--muted);font-weight:400;margin-left:4px}
+  .total .dec{font-size:.55em;opacity:.75}
+  .amt .dec{font-size:.75em;color:var(--muted)}
   .duesoon{font-size:.8rem;color:var(--muted);margin-top:5px}
   .duesoon.warn{color:var(--terra)}
 
@@ -176,7 +178,7 @@
     <button class="tbtn" onclick="openAccts()">Bank accounts</button>
     <button class="tbtn" onclick="changePassword()">Change password</button>
     <button class="tbtn" onclick="signOut()">Sign out</button>
-    <span class="tbtn" id="verLabel" style="cursor:default;opacity:.6">v3.4</span>
+    <span class="tbtn" id="verLabel" style="cursor:default;opacity:.6">v3.5</span>
   </div>
 
   <button class="fab" onclick="openForm()" aria-label="Add subscription">+</button>
@@ -186,14 +188,7 @@
   <div class="sheet">
     <h2 id="formTitle">Add subscription</h2>
     <div class="field"><label>Name *</label><input id="f_name" placeholder="Netflix, iCloud, gym…"></div>
-    <div class="row2">
-      <div class="field"><label>Planned amount *</label><input id="f_amount" type="number" step="0.01" min="0" inputmode="decimal" placeholder="15.99"></div>
-      <div class="field"><label>Currency *</label>
-        <select id="f_currency">
-          <option>USD</option><option>SGD</option><option>MYR</option><option>EUR</option><option>GBP</option><option>AUD</option><option>JPY</option><option>KRW</option><option>HKD</option><option>THB</option><option>IDR</option><option>PHP</option><option>VND</option><option>INR</option><option>CAD</option><option>NZD</option><option>CNY</option><option>TWD</option>
-        </select>
-      </div>
-    </div>
+    <div class="field"><label>Planned amount ($) *</label><input id="f_amount" type="number" step="0.01" min="0" inputmode="decimal" placeholder="15.99"></div>
     <div class="row2">
       <div class="field" id="cycNwrap"><label>Repeats every *</label><input id="f_cycn" type="number" min="1" step="1" value="1" inputmode="numeric"></div>
       <div class="field"><label>&#8203;</label>
@@ -224,7 +219,7 @@
   <div class="sheet">
     <h2 id="payTitle">Mark paid</h2>
     <div class="row2">
-      <div class="field"><label>Amount actually paid *</label><input id="p_amount" type="number" step="0.01" min="0" inputmode="decimal"></div>
+      <div class="field"><label>Amount actually paid ($) *</label><input id="p_amount" type="number" step="0.01" min="0" inputmode="decimal"></div>
       <div class="field"><label>Payment date *</label><input id="p_date" type="date"></div>
     </div>
     <div class="formerr" id="p_err"></div>
@@ -250,7 +245,7 @@
 </div>
 
 <script>
-const APP_VERSION = "3.4";
+const APP_VERSION = "3.5";
 const SUPABASE_URL = "https://anpvflizwcmyefbxsfpx.supabase.co";
 const SUPABASE_KEY = "sb_publishable_Va_eUdkFSmtD4uKqNIvppw_wlB1eEYJ";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { flowType: "implicit", detectSessionInUrl: true } });
@@ -262,7 +257,8 @@ let view = localStorage.getItem("view") || "week";
 let tab = "this";
 
 const $ = id => document.getElementById(id);
-const fmt = (n,c) => (c||"") + " " + Number(n).toFixed(2);
+const money = n => { const [i,d] = Number(n).toFixed(2).split("."); return "$" + Number(i).toLocaleString("en-US") + '<span class="dec">.' + d + '</span>'; };
+const moneyText = n => "$" + Number(n).toFixed(2);
 const today = () => { const d=new Date(); return new Date(d.getFullYear(),d.getMonth(),d.getDate()); };
 const iso = d => d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
 
@@ -416,20 +412,17 @@ function periodEnds(){
 
 /* ---------- render ---------- */
 function render(){
-  const totals = {};
-  let dueSoon = 0, overdue = 0;
+  let total = 0, dueSoon = 0, overdue = 0;
   items.forEach(it=>{
-    const m = monthlyEquiv(it);
-    if(m>0) totals[it.currency||"?"] = (totals[it.currency||"?"]||0)+m;
+    total += monthlyEquiv(it);
     const du = daysUntil(it.next_due);
     if(it.active && du!==null){
       if(du<0) overdue++;
       else if(du<=7) dueSoon++;
     }
   });
-  const tParts = Object.entries(totals).map(([c,v])=>fmt(v,c));
-  $("totMonthly").innerHTML = tParts.length
-    ? tParts.join(" + ") + '<span class="per">/ month</span>'
+  $("totMonthly").innerHTML = total > 0
+    ? money(total) + '<span class="per">/ month</span>'
     : "—";
   const bits = [];
   if(overdue) bits.push(overdue + " overdue");
@@ -490,7 +483,7 @@ function render(){
         +'<div class="meta">'+esc(it.payment_method||"no account set")+' · '+cycleLabel(it)+(it.notes?' · '+esc(it.notes):'')+'</div>'
       +'</div>'
       +'<div class="right">'
-        +(it.amount?'<div class="amt">'+fmt(it.amount,it.currency)+'</div>':'')
+        +(it.amount?'<div class="amt">'+money(it.amount)+'</div>':'')
         +due
       +'</div>'
       +(canPay?'<button class="paybtn" aria-label="Mark '+esc(it.name)+' paid" title="Mark paid" onclick="openPay(&quot;'+it.id+'&quot;)">✓</button>':'')
@@ -522,7 +515,6 @@ function openForm(id){
   $("formTitle").textContent = it ? "Edit subscription" : "Add subscription";
   $("f_name").value = it?.name || "";
   $("f_amount").value = it?.amount ?? "";
-  $("f_currency").value = it?.currency || localStorage.getItem("lastCurrency") || "USD";
   const c = it ? cyc(it) : { unit:"month", n:1 };
   $("f_cycu").value = c.unit;
   $("f_cycn").value = c.n;
@@ -543,7 +535,7 @@ function openForm(id){
   $("f_active").checked = it ? it.active : true;
   const lp = it && lastPay[it.id];
   $("f_lastpaid").style.display = lp ? "block" : "none";
-  if(lp) $("f_lastpaid").textContent = "Last paid: " + (lp.amount!=null ? fmt(lp.amount, it.currency) : "—") + " on " + prettyDate(lp.paid_on);
+  if(lp) $("f_lastpaid").textContent = "Last paid: " + (lp.amount!=null ? moneyText(lp.amount) : "—") + " on " + prettyDate(lp.paid_on);
   $("f_err").style.display = "none";
   $("deleteBtn").style.display = it ? "block" : "none";
   $("overlay").classList.add("open");
@@ -566,7 +558,7 @@ async function saveItem(){
   const rec = {
     name,
     amount: Number(amount),
-    currency: $("f_currency").value,
+    currency: "USD",
     cycle_unit: unit,
     cycle_count: unit==="once" ? null : n,
     next_due: due,
@@ -574,7 +566,6 @@ async function saveItem(){
     notes: $("f_notes").value.trim() || null,
     active: $("f_active").checked
   };
-  try{ localStorage.setItem("lastCurrency", rec.currency); }catch(e){}
   const q = editingId
     ? sb.from("subscriptions").update(rec).eq("id", editingId)
     : sb.from("subscriptions").insert(rec);
@@ -697,5 +688,5 @@ checkForUpdate();
 init();
 </script>
 </body>
-<!-- v3.4 -->
+<!-- v3.5 -->
 </html>
