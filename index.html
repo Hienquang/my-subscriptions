@@ -7,9 +7,10 @@
 <meta name="color-scheme" content="dark">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Subscriptions">
-<title>Subscriptions</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%23C9A86A'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='%2314161C' font-family='Georgia'>S</text></svg>">
+<meta name="apple-mobile-web-app-title" content="Due">
+<title>Due</title>
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=Public+Sans:wght@400;500&display=swap">
@@ -138,7 +139,7 @@
 <body>
 
 <div id="authView" class="auth" style="display:none">
-  <h1 class="serif">Subscriptions</h1>
+  <h1 class="serif">Due</h1>
   <p>Sign in to see your subscriptions on any device.</p>
   <input id="email" type="email" placeholder="you@email.com" autocomplete="email">
   <input id="password" type="password" placeholder="Password" autocomplete="current-password">
@@ -151,7 +152,7 @@
 <div id="appView" class="wrap" style="display:none">
   <header>
     <div>
-      <h1>Subscriptions</h1>
+      <h1>Due</h1>
       <div class="sub" id="userEmail"></div>
     </div>
     <button class="addbtn" onclick="openForm()">+ Add</button>
@@ -178,7 +179,7 @@
     <button class="tbtn" onclick="openAccts()">Bank accounts</button>
     <button class="tbtn" onclick="changePassword()">Change password</button>
     <button class="tbtn" onclick="signOut()">Sign out</button>
-    <span class="tbtn" id="verLabel" style="cursor:default;opacity:.6">v3.6</span>
+    <span class="tbtn" id="verLabel" style="cursor:default;opacity:.6">v3.7</span>
   </div>
 
   <button class="fab" onclick="openForm()" aria-label="Add subscription">+</button>
@@ -245,7 +246,7 @@
 </div>
 
 <script>
-const APP_VERSION = "3.6";
+const APP_VERSION = "3.7";
 const SUPABASE_URL = "https://anpvflizwcmyefbxsfpx.supabase.co";
 const SUPABASE_KEY = "sb_publishable_Va_eUdkFSmtD4uKqNIvppw_wlB1eEYJ";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { flowType: "implicit", detectSessionInUrl: true } });
@@ -688,5 +689,5 @@ checkForUpdate();
 init();
 </script>
 </body>
-<!-- v3.6 -->
+<!-- v3.7 -->
 </html>
