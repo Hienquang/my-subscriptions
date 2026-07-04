@@ -16,47 +16,51 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=Public+Sans:wght@400;500&display=swap">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
+  /* ---------- theme: ink & brass (always dark) ---------- */
   :root{
-    --bg:#14161C; --sheet:#1B1E26; --line:#23262E; --line2:#333845;
-    --ink:#E8E4D8; --muted:#7A7E8A; --green:#C9A86A; --mint:#C9A86A; --terra:#C08466;
+    --bg:#14161C; --sheet:#1B1E26; --line:#23262E; --line-strong:#333845;
+    --text:#E8E4D8; --muted:#7A7E8A; --accent:#C9A86A; --warn:#C08466;
     color-scheme: dark;
   }
   *{box-sizing:border-box;margin:0;padding:0}
   html{background:var(--bg)}
-  body{font-family:'Public Sans',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;-webkit-font-smoothing:antialiased}
+  body{font-family:'Public Sans',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
   .serif{font-family:'Fraunces',Georgia,serif}
-  .wrap{max-width:560px;margin:0 auto;padding:max(calc(env(safe-area-inset-top) + 30px), 64px) 20px 100px}
   button{font:inherit;cursor:pointer;border:none;background:none;color:inherit}
 
+  /* ---------- layout ---------- */
+  .wrap{max-width:560px;margin:0 auto;padding:max(calc(env(safe-area-inset-top) + 30px), 64px) 20px 100px}
   header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px}
   h1{font-family:'Fraunces',Georgia,serif;font-size:1.35rem;font-weight:500;letter-spacing:.01em}
-  .sub{color:var(--muted);font-size:.75rem;margin-top:4px}
   .tbtn{color:var(--muted);font-size:.8rem;padding:4px 0}
-  .tbtn:hover{color:var(--ink)}
-  .addbtn{border:1px solid var(--line2);border-radius:10px;padding:8px 14px;font-size:.85rem;color:var(--ink)}
+  .tbtn:hover{color:var(--text)}
+  .addbtn{border:1px solid var(--line-strong);border-radius:10px;padding:8px 14px;font-size:.85rem;color:var(--text)}
   .addbtn:hover{border-color:var(--muted)}
 
+  /* ---------- hero ---------- */
   .hero{margin:20px 0 4px}
-  .total{font-size:1.8rem;font-weight:500;color:var(--mint)}
+  .total{font-size:1.8rem;font-weight:500;color:var(--accent)}
   .total .per{font-family:'Public Sans',sans-serif;font-size:.75rem;color:var(--muted);font-weight:400;margin-left:4px}
   .total .dec{font-size:.55em;opacity:.75}
-  .amt .dec{font-size:.75em;color:var(--muted)}
   .duesoon{font-size:.8rem;color:var(--muted);margin-top:5px}
-  .duesoon.warn{color:var(--terra)}
+  .duesoon.warn{color:var(--warn)}
+  .offbar{display:none;background:rgba(192,132,102,.12);color:var(--warn);font-size:.78rem;padding:9px 14px;border-radius:10px;margin-top:14px;text-align:center}
+  body.off .fab, body.off .addbtn, body.off .paybtn{opacity:.3;pointer-events:none}
 
+  /* ---------- view toggle, tabs, filters ---------- */
   .viewbar{display:flex;justify-content:flex-end;margin-top:14px}
-  .seg{display:inline-flex;border:1px solid var(--line2);border-radius:10px;overflow:hidden}
+  .seg{display:inline-flex;border:1px solid var(--line-strong);border-radius:10px;overflow:hidden}
   .seg button{padding:6px 14px;font-size:.78rem;color:var(--muted)}
-  .seg button.on{background:var(--sheet);color:var(--ink)}
+  .seg button.on{background:var(--sheet);color:var(--text)}
   .tabs{display:flex;gap:20px;border-bottom:1px solid var(--line);margin-top:4px}
   .tab{padding:0 0 9px;font-size:.82rem;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px}
-  .tab.on{color:var(--ink);border-color:var(--green)}
-
+  .tab.on{color:var(--text);border-color:var(--accent)}
   .chips{display:flex;gap:8px;overflow-x:auto;padding:12px 0 4px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
   .chips::-webkit-scrollbar{display:none}
-  .chip{flex:0 0 auto;border:1px solid var(--line2);color:var(--muted);border-radius:999px;padding:5px 12px;font-size:.76rem}
-  .chip.on{color:var(--ink);border-color:var(--muted)}
+  .chip{flex:0 0 auto;border:1px solid var(--line-strong);color:var(--muted);border-radius:999px;padding:5px 12px;font-size:.76rem}
+  .chip.on{color:var(--text);border-color:var(--muted)}
 
+  /* ---------- list ---------- */
   .item{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:13px 0;border-top:1px solid var(--line)}
   #list .item:first-child{border-top:none}
   .item .info{flex:1;min-width:0;cursor:pointer}
@@ -64,23 +68,22 @@
   .item .meta{color:var(--muted);font-size:.73rem;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .item .right{text-align:right}
   .item .amt{font-family:'Fraunces',Georgia,serif;font-size:.92rem}
+  .amt .dec{font-size:.75em;color:var(--muted)}
   .due{font-size:.73rem;color:var(--muted);margin-top:2px}
-  .due.hot{color:var(--terra)}
-  .due.near{color:var(--ink)}
+  .due.hot{color:var(--warn)}
+  .due.near{color:var(--text)}
   .item.inactive{opacity:.45}
-  .paybtn{flex:0 0 auto;width:38px;height:38px;border:1px solid var(--green);border-radius:50%;color:var(--green);display:flex;align-items:center;justify-content:center;font-size:1rem}
-  .paybtn:active{background:var(--green);color:var(--bg)}
-  .offbar{display:none;background:rgba(192,132,102,.12);color:var(--terra);font-size:.78rem;padding:9px 14px;border-radius:10px;margin-top:14px;text-align:center}
-  body.off .fab, body.off .addbtn, body.off .paybtn{opacity:.3;pointer-events:none}
+  .paybtn{flex:0 0 auto;width:38px;height:38px;border:1px solid var(--accent);border-radius:50%;color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:1rem}
+  .paybtn:active{background:var(--accent);color:var(--bg)}
   .empty{text-align:center;color:var(--muted);padding:44px 16px;font-size:.88rem}
+  .fab{position:fixed;right:20px;bottom:calc(env(safe-area-inset-bottom) + 20px);width:52px;height:52px;border-radius:50%;background:var(--accent);color:var(--bg);font-size:1.5rem;line-height:1;display:flex;align-items:center;justify-content:center}
 
-  .fab{position:fixed;right:20px;bottom:calc(env(safe-area-inset-bottom) + 20px);width:52px;height:52px;border-radius:50%;background:var(--green);color:var(--bg);font-size:1.5rem;line-height:1;display:flex;align-items:center;justify-content:center}
+  /* ---------- responsive ---------- */
   @media (min-width:641px){.fab{display:none}}
   @media (max-width:640px){
     .addbtn{display:none}
     .wrap{padding-left:16px;padding-right:16px;padding-bottom:92px}
     h1{font-size:1.15rem}
-    .sub{font-size:.7rem;margin-top:2px}
     .hero{margin:16px 0 2px}
     .total{font-size:1.45rem}
     .duesoon{font-size:.74rem}
@@ -88,40 +91,42 @@
     .field input,.field select,.field textarea{font-size:16px}
   }
 
+  /* ---------- auth ---------- */
   .auth{max-width:360px;margin:0 auto;padding:max(calc(env(safe-area-inset-top) + 14vh), 16vh) 20px 0;text-align:center}
   .auth h1{font-size:1.5rem;margin-bottom:8px}
   .auth p{color:var(--muted);font-size:.85rem;margin-bottom:24px}
-  .auth input{width:100%;padding:13px 14px;border:1px solid var(--line2);border-radius:10px;font-size:1rem;margin-bottom:12px;background:transparent;color:var(--ink)}
+  .auth input{width:100%;padding:13px 14px;border:1px solid var(--line-strong);border-radius:10px;font-size:1rem;margin-bottom:12px;background:transparent;color:var(--text)}
   .auth input::placeholder{color:var(--muted)}
-  .auth input:focus{outline:none;border-color:var(--green)}
-  .btn{width:100%;background:var(--green);color:var(--bg);padding:13px;border-radius:10px;font-weight:500;font-size:.95rem}
+  .auth input:focus{outline:none;border-color:var(--accent)}
+  .btn{width:100%;background:var(--accent);color:var(--bg);padding:13px;border-radius:10px;font-weight:500;font-size:.95rem}
   .btn:disabled{opacity:.5}
   .ghost{display:block;width:100%;color:var(--muted);font-size:.8rem;padding:10px 0}
-  .ghost:hover{color:var(--ink)}
+  .ghost:hover{color:var(--text)}
   .msg{font-size:.8rem;margin-top:10px;color:var(--muted);line-height:1.5}
-  .msg.err{color:var(--terra)}
+  .msg.err{color:var(--warn)}
 
+  /* ---------- sheets (bottom overlays) ---------- */
   .overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:flex-end;justify-content:center;z-index:10}
   .overlay.open{display:flex}
-  .sheet{background:var(--sheet);width:100%;max-width:560px;border-radius:20px 20px 0 0;padding:20px 18px calc(22px + env(safe-area-inset-bottom));max-height:92vh;overflow-y:auto;border-top:1px solid var(--line2)}
+  .sheet{background:var(--sheet);width:100%;max-width:560px;border-radius:20px 20px 0 0;padding:20px 18px calc(22px + env(safe-area-inset-bottom));max-height:92vh;overflow-y:auto;border-top:1px solid var(--line-strong)}
   .sheet h2{font-family:'Fraunces',Georgia,serif;font-size:1.05rem;font-weight:500;margin-bottom:14px}
   .field{margin-bottom:11px}
   .field label{display:block;font-size:.72rem;color:var(--muted);margin-bottom:5px}
-  .field input,.field select,.field textarea{width:100%;padding:10px 12px;border:1px solid var(--line2);border-radius:9px;font-size:.9rem;background:transparent;color:var(--ink);font-family:inherit}
-  .field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--green)}
+  .field input,.field select,.field textarea{width:100%;min-width:0;padding:10px 12px;border:1px solid var(--line-strong);border-radius:9px;font-size:.9rem;background:transparent;color:var(--text);font-family:inherit}
+  .field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--accent)}
   .field select option{background:var(--sheet)}
+  input[type="date"]{-webkit-appearance:none;appearance:none;text-align:left;min-height:41px}
   .row2{display:flex;gap:10px}
   .row2 .field{flex:1;min-width:0}
-  .field input{min-width:0}
-  input[type="date"]{-webkit-appearance:none;appearance:none;text-align:left;min-height:41px}
   .check{display:flex;align-items:center;gap:8px;font-size:.85rem;margin:4px 0 12px}
-  .check input{width:17px;height:17px;accent-color:var(--green)}
+  .check input{width:17px;height:17px;accent-color:var(--accent)}
   .actions{display:flex;gap:10px;margin-top:6px}
   .actions .btn{flex:1}
-  .danger{border:1px solid var(--line2);color:var(--terra);padding:13px 16px;border-radius:10px;font-size:.9rem}
+  .danger{border:1px solid var(--line-strong);color:var(--warn);padding:13px 16px;border-radius:10px;font-size:.9rem}
   .lastpaid{font-size:.78rem;color:var(--muted);margin:-2px 0 10px}
-  .formerr{font-size:.78rem;color:var(--terra);margin:2px 0 8px;display:none}
+  .formerr{font-size:.78rem;color:var(--warn);margin:2px 0 8px;display:none}
 
+  /* ---------- accounts sheet ---------- */
   .acct{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:11px 0;border-top:1px solid var(--line)}
   .acct:first-child{border-top:none}
   .acct .nm{font-size:.9rem;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -129,10 +134,11 @@
   .acct .nm .tag{font-size:.7rem;color:var(--muted);margin-left:6px}
   .acct .btns{display:flex;gap:14px;flex:0 0 auto}
   .acctadd{display:flex;gap:10px;margin:12px 0 4px}
-  .acctadd input{flex:1;padding:10px 12px;border:1px solid var(--line2);border-radius:9px;font-size:.9rem;background:transparent;color:var(--ink)}
-  .acctadd input:focus{outline:none;border-color:var(--green)}
-  .acctadd button{border:1px solid var(--line2);border-radius:9px;padding:0 16px;font-size:.85rem}
+  .acctadd input{flex:1;padding:10px 12px;border:1px solid var(--line-strong);border-radius:9px;font-size:.9rem;background:transparent;color:var(--text)}
+  .acctadd input:focus{outline:none;border-color:var(--accent)}
+  .acctadd button{border:1px solid var(--line-strong);border-radius:9px;padding:0 16px;font-size:.85rem}
 
+  /* ---------- footer ---------- */
   .foot{display:flex;justify-content:center;gap:26px;margin-top:48px;padding-top:18px;border-top:1px solid var(--line)}
 </style>
 </head>
@@ -151,9 +157,7 @@
 
 <div id="appView" class="wrap" style="display:none">
   <header>
-    <div>
-      <h1>Due</h1>
-    </div>
+    <h1>Due</h1>
     <button class="addbtn" onclick="openForm()">+ Add</button>
   </header>
 
@@ -170,7 +174,6 @@
     </div>
   </div>
   <div class="tabs" id="tabs"></div>
-
   <div class="chips" id="chips"></div>
   <div id="list"></div>
 
@@ -178,13 +181,13 @@
     <button class="tbtn" onclick="openAccts()">Bank accounts</button>
     <button class="tbtn" onclick="changePassword()">Change password</button>
     <button class="tbtn" onclick="signOut()">Sign out</button>
-    <span class="tbtn" id="verLabel" style="cursor:default;opacity:.6">v3.8</span>
+    <span class="tbtn" style="cursor:default;opacity:.6">v4.0</span>
   </div>
 
   <button class="fab" onclick="openForm()" aria-label="Add subscription">+</button>
 </div>
 
-<div class="overlay" id="overlay" onclick="if(event.target===this)closeForm()">
+<div class="overlay" id="formSheet" onclick="if(event.target===this)closeForm()">
   <div class="sheet">
     <h2 id="formTitle">Add subscription</h2>
     <div class="field"><label>Name *</label><input id="f_name" placeholder="Netflix, iCloud, gym…"></div>
@@ -205,7 +208,7 @@
     </div>
     <div class="field"><label>Notes</label><textarea id="f_notes" rows="2" placeholder="Optional — shared with family, cancel before trial ends…"></textarea></div>
     <div class="lastpaid" id="f_lastpaid" style="display:none"></div>
-    <div class="check"><input type="checkbox" id="f_active" checked><label for="f_active" style="margin:0;font-size:.85rem;color:var(--ink)">Active</label></div>
+    <div class="check"><input type="checkbox" id="f_active" checked><label for="f_active" style="margin:0;font-size:.85rem;color:var(--text)">Active</label></div>
     <div class="formerr" id="f_err"></div>
     <div class="actions">
       <button class="danger" id="deleteBtn" style="display:none" onclick="delItem()">Delete</button>
@@ -215,7 +218,7 @@
   </div>
 </div>
 
-<div class="overlay" id="payOverlay" onclick="if(event.target===this)closePay()">
+<div class="overlay" id="paySheet" onclick="if(event.target===this)closePay()">
   <div class="sheet">
     <h2 id="payTitle">Mark paid</h2>
     <div class="row2">
@@ -228,12 +231,12 @@
   </div>
 </div>
 
-<div class="overlay" id="acctOverlay" onclick="if(event.target===this)closeAccts()">
+<div class="overlay" id="acctSheet" onclick="if(event.target===this)closeAccts()">
   <div class="sheet">
     <h2>Bank accounts</h2>
     <div id="acctList"></div>
     <div class="acctadd">
-      <input id="newAcct" placeholder="e.g. DBS Visa •1234">
+      <input id="newAcct" placeholder="e.g. Chase Visa •1234">
       <button onclick="addAcct()">Add</button>
     </div>
     <div class="check" style="margin-top:10px">
@@ -245,7 +248,10 @@
 </div>
 
 <script>
-const APP_VERSION = "3.8";
+"use strict";
+
+/* ================= constants & state ================= */
+const APP_VERSION = "4.0";
 const SUPABASE_URL = "https://anpvflizwcmyefbxsfpx.supabase.co";
 const SUPABASE_KEY = "sb_publishable_Va_eUdkFSmtD4uKqNIvppw_wlB1eEYJ";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { flowType: "implicit", detectSessionInUrl: true } });
@@ -256,29 +262,73 @@ let filter = "all";
 let view = localStorage.getItem("view") || "week";
 let tab = "this";
 
+/* ================= tiny helpers ================= */
 const $ = id => document.getElementById(id);
+const show = (id, on) => { $(id).style.display = on ? "block" : "none"; };
+const openSheet = id => $(id).classList.add("open");
+const closeSheet = id => $(id).classList.remove("open");
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const money = n => { const [i,d] = Number(n).toFixed(2).split("."); return "$" + Number(i).toLocaleString("en-US") + '<span class="dec">.' + d + '</span>'; };
 const moneyText = n => "$" + Number(n).toFixed(2);
-const today = () => { const d=new Date(); return new Date(d.getFullYear(),d.getMonth(),d.getDate()); };
-const iso = d => d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+const today = () => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), d.getDate()); };
+const iso = d => d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+const prettyDate = s => new Date(s+"T00:00:00").toLocaleDateString(undefined, { day:"numeric", month:"short" });
+const daysUntil = s => s == null ? null : Math.round((new Date(s+"T00:00:00") - today()) / 86400000);
 
-/* ---------- auth ---------- */
+/* ================= billing cycles ================= */
+const LEGACY_CYCLES = { weekly:["week",1], biweekly:["week",2], fourweekly:["week",4], monthly:["month",1], quarterly:["month",3], yearly:["month",12], once:["once",null] };
+function cyc(it){
+  let unit = it.cycle_unit, n = it.cycle_count;
+  if(!unit) [unit, n] = LEGACY_CYCLES[it.billing_cycle] || ["month", 1];
+  return { unit, n: n || 1 };
+}
+function monthlyEquiv(it){
+  if(!it.amount || !it.active) return 0;
+  const a = Number(it.amount), { unit, n } = cyc(it);
+  if(unit === "week") return a * 52 / (12 * n);
+  if(unit === "month") return a / n;
+  return 0;
+}
+function addCycle(dateStr, it){
+  const { unit, n } = cyc(it);
+  if(unit === "once") return null;
+  const d = new Date(dateStr + "T00:00:00");
+  if(unit === "week") d.setDate(d.getDate() + 7*n); else d.setMonth(d.getMonth() + n);
+  return iso(d);
+}
+function cycleLabel(it){
+  const { unit, n } = cyc(it);
+  if(unit === "once") return "one-time";
+  if(unit === "week") return n === 1 ? "weekly" : "every " + n + " wks";
+  return n === 1 ? "monthly" : n === 3 ? "quarterly" : n === 12 ? "yearly" : "every " + n + " mo";
+}
+function periodEnds(){
+  const t = today();
+  if(view === "week"){
+    const monday = new Date(t); monday.setDate(t.getDate() - (t.getDay()+6)%7);
+    const e1 = new Date(monday); e1.setDate(monday.getDate()+7);
+    const e2 = new Date(monday); e2.setDate(monday.getDate()+14);
+    return { thisEnd:e1, nextEnd:e2 };
+  }
+  return { thisEnd: new Date(t.getFullYear(), t.getMonth()+1, 1), nextEnd: new Date(t.getFullYear(), t.getMonth()+2, 1) };
+}
+
+/* ================= auth ================= */
 async function init(){
   const { data:{ session } } = await sb.auth.getSession();
-  session ? showApp(session) : showAuth();
-  sb.auth.onAuthStateChange((ev, s) => {
-    if (ev === "SIGNED_IN" && s) showApp(s);
-    if (ev === "SIGNED_OUT") showAuth();
+  session ? showApp() : showAuth();
+  sb.auth.onAuthStateChange(ev => {
+    if(ev === "SIGNED_IN") showApp();
+    if(ev === "SIGNED_OUT") showAuth();
   });
 }
-function showAuth(){ $("appView").style.display="none"; $("authView").style.display="block"; }
-async function showApp(session){
-  $("authView").style.display="none"; $("appView").style.display="block";
-  await load();
-}
+function showAuth(){ show("appView", false); show("authView", true); }
+async function showApp(){ show("authView", false); show("appView", true); await load(); }
+
+function setMsg(t, err){ const m = $("authMsg"); m.textContent = t; m.className = "msg" + (err ? " err" : ""); }
 async function signIn(){
   const email = $("email").value.trim(), password = $("password").value;
-  if(!email || !password){ setMsg("Enter your email and password.", true); return; }
+  if(!email || !password) return setMsg("Enter your email and password.", true);
   $("signInBtn").disabled = true; setMsg("Signing in…");
   const { error } = await sb.auth.signInWithPassword({ email, password });
   $("signInBtn").disabled = false;
@@ -288,42 +338,40 @@ async function signIn(){
 }
 async function signUpNew(){
   const email = $("email").value.trim(), password = $("password").value;
-  if(!email){ setMsg("Enter your email above first.", true); return; }
-  if(!password || password.length < 8){ setMsg("Choose a password of at least 8 characters, then tap Create an account.", true); return; }
+  if(!email) return setMsg("Enter your email above first.", true);
+  if(!password || password.length < 8) return setMsg("Choose a password of at least 8 characters, then tap Create an account.", true);
   setMsg("Creating account…");
   const { data, error } = await sb.auth.signUp({ email, password });
-  if(error){ setMsg(error.message, true); return; }
+  if(error) return setMsg(error.message, true);
   if(!data.session) setMsg("Almost done — check your email to confirm your account.");
 }
 async function sendLink(){
   const email = $("email").value.trim();
-  if(!email){ setMsg("Enter your email above first.", true); return; }
+  if(!email) return setMsg("Enter your email above first.", true);
   setMsg("Sending…");
   const { error } = await sb.auth.signInWithOtp({ email, options:{ shouldCreateUser:true, emailRedirectTo: location.origin + location.pathname } });
-  if(error){ setMsg(error.message, true); return; }
-  setMsg("Link sent to " + email + ". Open it on this device, then set a new password via “Change password”.");
+  setMsg(error ? error.message : "Link sent to " + email + ". Open it on this device, then set a new password via “Change password”.", !!error);
 }
 async function changePassword(){
   const p = prompt("New password (at least 8 characters):");
   if(p === null) return;
-  if(p.length < 8){ alert("Password must be at least 8 characters."); return; }
+  if(p.length < 8) return alert("Password must be at least 8 characters.");
   const { error } = await sb.auth.updateUser({ password: p });
   alert(error ? "Could not set password: " + error.message : "Password saved. Use it to sign in on any device.");
 }
-function setMsg(t, err){ const m=$("authMsg"); m.textContent=t; m.className="msg"+(err?" err":""); }
-async function signOut(){ await sb.auth.signOut(); }
+const signOut = () => sb.auth.signOut();
 
-/* ---------- data ---------- */
+/* ================= data, cache & offline ================= */
 function setOffline(v){
   offline = v;
   document.body.classList.toggle("off", v);
-  const b = $("offbar"); if(b) b.style.display = v ? "block" : "none";
+  show("offbar", v);
 }
 function saveCache(){ try{ localStorage.setItem("cache", JSON.stringify({ items, accounts, lastPay })); }catch(e){} }
 function useCache(){
   try{
     const c = JSON.parse(localStorage.getItem("cache") || "null");
-    if(c){ items = c.items||[]; accounts = c.accounts||[]; lastPay = c.lastPay||{}; }
+    if(c){ items = c.items || []; accounts = c.accounts || []; lastPay = c.lastPay || {}; }
   }catch(e){}
   render();
 }
@@ -352,195 +400,152 @@ async function load(){
 }
 async function seedAccounts(){
   if(accounts.length) return;
-  const names = [...new Set(items.map(i=>i.payment_method).filter(Boolean))];
+  const names = [...new Set(items.map(i => i.payment_method).filter(Boolean))];
   if(!names.length) return;
-  const { data, error } = await sb.from("accounts").insert(names.map(n=>({name:n}))).select();
-  if(!error && data) accounts = data.sort((x,y)=>x.name.localeCompare(y.name));
+  const { data, error } = await sb.from("accounts").insert(names.map(n => ({ name:n }))).select();
+  if(!error && data) accounts = data.sort((x,y) => x.name.localeCompare(y.name));
 }
 
-/* ---------- cycle helpers ---------- */
-function cyc(it){
-  let unit = it.cycle_unit, n = it.cycle_count;
-  if(!unit){
-    const map = { weekly:["week",1], biweekly:["week",2], fourweekly:["week",4], monthly:["month",1], quarterly:["month",3], yearly:["month",12], once:["once",null] };
-    [unit, n] = map[it.billing_cycle] || ["month",1];
-  }
-  return { unit, n: n || 1 };
-}
-function monthlyEquiv(it){
-  if(!it.amount || !it.active) return 0;
-  const a = Number(it.amount), { unit, n } = cyc(it);
-  if(unit === "week") return a*52/(12*n);
-  if(unit === "month") return a/n;
-  return 0;
-}
-function daysUntil(d){
-  if(!d) return null;
-  return Math.round((new Date(d+"T00:00:00") - today()) / 86400000);
-}
-function addCycle(dateStr, it){
-  const { unit, n } = cyc(it);
-  if(unit === "once") return null;
-  const d = new Date(dateStr+"T00:00:00");
-  if(unit === "week") d.setDate(d.getDate()+7*n);
-  else d.setMonth(d.getMonth()+n);
-  return iso(d);
-}
-function cycleLabel(it){
-  const { unit, n } = cyc(it);
-  if(unit === "once") return "one-time";
-  if(unit === "week") return n===1 ? "weekly" : "every "+n+" wks";
-  if(n===1) return "monthly";
-  if(n===3) return "quarterly";
-  if(n===12) return "yearly";
-  return "every "+n+" mo";
-}
-function periodEnds(){
-  const t = today();
-  if(view === "week"){
-    const monday = new Date(t); monday.setDate(t.getDate() - (t.getDay()+6)%7);
-    const e1 = new Date(monday); e1.setDate(monday.getDate()+7);
-    const e2 = new Date(monday); e2.setDate(monday.getDate()+14);
-    return { thisEnd:e1, nextEnd:e2 };
-  }
-  return {
-    thisEnd: new Date(t.getFullYear(), t.getMonth()+1, 1),
-    nextEnd: new Date(t.getFullYear(), t.getMonth()+2, 1)
-  };
-}
-
-/* ---------- render ---------- */
+/* ================= render ================= */
 function render(){
+  renderHero();
+  renderControls();
+  renderList();
+}
+function renderHero(){
   let total = 0, dueSoon = 0, overdue = 0;
-  items.forEach(it=>{
+  items.forEach(it => {
     total += monthlyEquiv(it);
     const du = daysUntil(it.next_due);
-    if(it.active && du!==null){
-      if(du<0) overdue++;
-      else if(du<=7) dueSoon++;
+    if(it.active && du !== null){
+      if(du < 0) overdue++;
+      else if(du <= 7) dueSoon++;
     }
   });
-  $("totMonthly").innerHTML = total > 0
-    ? money(total) + '<span class="per">/ month</span>'
-    : "—";
+  $("totMonthly").innerHTML = total > 0 ? money(total) + '<span class="per">/ month</span>' : "—";
   const bits = [];
   if(overdue) bits.push(overdue + " overdue");
   if(dueSoon) bits.push(dueSoon + " due in the next 7 days");
   $("dueLine").textContent = bits.length ? bits.join(" · ") : "nothing due in the next 7 days";
   $("dueLine").className = "duesoon" + (bits.length ? " warn" : "");
-
-  $("segWeek").className = view==="week" ? "on" : "";
-  $("segMonth").className = view==="month" ? "on" : "";
-  const unit = view==="week" ? "week" : "month";
+}
+function renderControls(){
+  $("segWeek").className = view === "week" ? "on" : "";
+  $("segMonth").className = view === "month" ? "on" : "";
+  const unit = view === "week" ? "week" : "month";
   $("tabs").innerHTML =
-    '<button class="tab'+(tab==="this"?" on":"")+'" onclick="setTab(\'this\')">This '+unit+'</button>'
-   +'<button class="tab'+(tab==="next"?" on":"")+'" onclick="setTab(\'next\')">Next '+unit+'</button>'
-   +'<button class="tab'+(tab==="all"?" on":"")+'" onclick="setTab(\'all\')">All</button>';
+    '<button class="tab' + (tab==="this" ? " on" : "") + '" onclick="setTab(\'this\')">This ' + unit + '</button>'
+  + '<button class="tab' + (tab==="next" ? " on" : "") + '" onclick="setTab(\'next\')">Next ' + unit + '</button>'
+  + '<button class="tab' + (tab==="all" ? " on" : "") + '" onclick="setTab(\'all\')">All</button>';
 
-  const methods = [...new Set(items.map(i=>i.payment_method).filter(Boolean))].sort();
+  const methods = [...new Set(items.map(i => i.payment_method).filter(Boolean))].sort();
   $("chips").innerHTML = methods.length
-    ? ['<button class="chip'+(filter==="all"?" on":"")+'" onclick="setFilter(&quot;all&quot;)">All accounts</button>']
-      .concat(methods.map(m=>'<button class="chip'+(filter===m?" on":"")+'" data-m="'+esc(m)+'" onclick="setFilter(this.dataset.m)">'+esc(m)+'</button>'))
+    ? ['<button class="chip' + (filter==="all" ? " on" : "") + '" onclick="setFilter(&quot;all&quot;)">All accounts</button>']
+      .concat(methods.map(m => '<button class="chip' + (filter===m ? " on" : "") + '" data-m="' + esc(m) + '" onclick="setFilter(this.dataset.m)">' + esc(m) + '</button>'))
       .join("")
     : "";
-
+}
+function visibleItems(){
   const { thisEnd, nextEnd } = periodEnds();
-  const shown = items.filter(i => filter==="all" || i.payment_method===filter)
+  return items
+    .filter(i => filter === "all" || i.payment_method === filter)
     .filter(i => {
       if(tab === "all") return true;
       if(!i.active || !i.next_due) return false;
-      const d = new Date(i.next_due+"T00:00:00");
-      if(tab === "this") return d < thisEnd;
-      return d >= thisEnd && d < nextEnd;
+      const d = new Date(i.next_due + "T00:00:00");
+      return tab === "this" ? d < thisEnd : (d >= thisEnd && d < nextEnd);
     })
-    .sort((a,b)=>{
-      if(a.active!==b.active) return a.active?-1:1;
-      const da=a.next_due||"9999", db=b.next_due||"9999";
-      return da<db?-1:da>db?1:0;
+    .sort((a,b) => {
+      if(a.active !== b.active) return a.active ? -1 : 1;
+      const da = a.next_due || "9999", db = b.next_due || "9999";
+      return da < db ? -1 : da > db ? 1 : 0;
     });
-
+}
+function dueLabel(it){
+  if(!it.active) return '<div class="due">paused</div>';
+  const du = daysUntil(it.next_due);
+  if(du === null) return "";
+  if(du < 0)  return '<div class="due hot">overdue ' + (-du) + 'd</div>';
+  if(du === 0) return '<div class="due hot">due today</div>';
+  if(du <= 7) return '<div class="due near">in ' + du + ' day' + (du > 1 ? "s" : "") + '</div>';
+  return '<div class="due">' + prettyDate(it.next_due) + '</div>';
+}
+function renderList(){
+  const shown = visibleItems();
+  const unit = view === "week" ? "week" : "month";
   if(!shown.length){
-    const txt = tab==="this" ? "Nothing due or overdue this "+unit+"."
-      : tab==="next" ? "Nothing due next "+unit+"."
+    const txt = tab === "this" ? "Nothing due or overdue this " + unit + "."
+      : tab === "next" ? "Nothing due next " + unit + "."
       : "No subscriptions yet.<br>Tap + to add your first one.";
-    $("list").innerHTML = '<div class="empty">'+txt+'</div>';
+    $("list").innerHTML = '<div class="empty">' + txt + '</div>';
     return;
   }
-  $("list").innerHTML = shown.map(it=>{
-    const du = daysUntil(it.next_due);
-    let due="";
-    if(!it.active) due='<div class="due">paused</div>';
-    else if(du===null) due="";
-    else if(du<0) due='<div class="due hot">overdue '+(-du)+'d</div>';
-    else if(du===0) due='<div class="due hot">due today</div>';
-    else if(du<=7) due='<div class="due near">in '+du+' day'+(du>1?"s":"")+'</div>';
-    else due='<div class="due">'+prettyDate(it.next_due)+'</div>';
+  $("list").innerHTML = shown.map(it => {
     const canPay = it.active && it.next_due;
-    return '<div class="item'+(it.active?"":" inactive")+'">'
-      +'<div class="info" onclick="openForm(&quot;'+it.id+'&quot;)">'
-        +'<div class="name">'+esc(it.name)+'</div>'
-        +'<div class="meta">'+esc(it.payment_method||"no account set")+' · '+cycleLabel(it)+(it.notes?' · '+esc(it.notes):'')+'</div>'
-      +'</div>'
-      +'<div class="right">'
-        +(it.amount?'<div class="amt">'+money(it.amount)+'</div>':'')
-        +due
-      +'</div>'
-      +(canPay?'<button class="paybtn" aria-label="Mark '+esc(it.name)+' paid" title="Mark paid" onclick="openPay(&quot;'+it.id+'&quot;)">✓</button>':'')
-    +'</div>';
+    return '<div class="item' + (it.active ? "" : " inactive") + '">'
+      + '<div class="info" onclick="openForm(&quot;' + it.id + '&quot;)">'
+      +   '<div class="name">' + esc(it.name) + '</div>'
+      +   '<div class="meta">' + esc(it.payment_method || "no account set") + ' · ' + cycleLabel(it) + (it.notes ? ' · ' + esc(it.notes) : '') + '</div>'
+      + '</div>'
+      + '<div class="right">'
+      +   (it.amount ? '<div class="amt">' + money(it.amount) + '</div>' : '')
+      +   dueLabel(it)
+      + '</div>'
+      + (canPay ? '<button class="paybtn" aria-label="Mark ' + esc(it.name) + ' paid" title="Mark paid" onclick="openPay(&quot;' + it.id + '&quot;)">✓</button>' : '')
+      + '</div>';
   }).join("");
 }
-function setFilter(f){ filter=f; render(); }
-function setView(v){ view=v; try{localStorage.setItem("view",v);}catch(e){} render(); }
-function setTab(t){ tab=t; render(); }
-function esc(s){ return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
-function prettyDate(d){ return new Date(d+"T00:00:00").toLocaleDateString(undefined,{day:"numeric",month:"short"}); }
+function setFilter(f){ filter = f; render(); }
+function setView(v){ view = v; try{ localStorage.setItem("view", v); }catch(e){} render(); }
+function setTab(t){ tab = t; render(); }
 
-/* ---------- subscription form ---------- */
+/* ================= subscription form ================= */
 function methodOptions(current){
   const opts = ['<option value="">Select an account…</option>'];
-  accounts.forEach(a=>{
-    if(a.active || a.name===current)
-      opts.push('<option value="'+esc(a.name)+'"'+(a.name===current?" selected":"")+'>'+esc(a.name)+(a.active?"":" (inactive)")+'</option>');
+  accounts.forEach(a => {
+    if(a.active || a.name === current)
+      opts.push('<option value="' + esc(a.name) + '"' + (a.name === current ? " selected" : "") + '>' + esc(a.name) + (a.active ? "" : " (inactive)") + '</option>');
   });
-  if(current && !accounts.some(a=>a.name===current))
-    opts.push('<option value="'+esc(current)+'" selected>'+esc(current)+'</option>');
+  if(current && !accounts.some(a => a.name === current))
+    opts.push('<option value="' + esc(current) + '" selected>' + esc(current) + '</option>');
   opts.push('<option value="__new">+ New account…</option>');
   return opts.join("");
 }
 function openForm(id){
   if(offline) return;
   editingId = id || null;
-  const it = id ? items.find(x=>x.id===id) : null;
+  const it = id ? items.find(x => x.id === id) : null;
   $("formTitle").textContent = it ? "Edit subscription" : "Add subscription";
   $("f_name").value = it?.name || "";
   $("f_amount").value = it?.amount ?? "";
   const c = it ? cyc(it) : { unit:"month", n:1 };
   $("f_cycu").value = c.unit;
   $("f_cycn").value = c.n;
-  $("cycNwrap").style.visibility = c.unit==="once" ? "hidden" : "visible";
+  $("cycNwrap").style.visibility = c.unit === "once" ? "hidden" : "visible";
   $("f_due").value = it?.next_due || "";
   $("f_method").innerHTML = methodOptions(it?.payment_method || "");
-  $("f_method").onchange = async e => {
-    if(e.target.value !== "__new") return;
-    const n = prompt("New bank account or card name:");
-    if(n && n.trim()){
-      const { data, error } = await sb.from("accounts").insert({ name:n.trim() }).select().single();
-      if(error){ alert("Could not add: "+error.message); e.target.value=""; return; }
-      accounts.push(data); accounts.sort((x,y)=>x.name.localeCompare(y.name));
-      $("f_method").innerHTML = methodOptions(data.name);
-    } else e.target.value = "";
-  };
+  $("f_method").onchange = onNewAccountOption;
   $("f_notes").value = it?.notes || "";
   $("f_active").checked = it ? it.active : true;
   const lp = it && lastPay[it.id];
-  $("f_lastpaid").style.display = lp ? "block" : "none";
-  if(lp) $("f_lastpaid").textContent = "Last paid: " + (lp.amount!=null ? moneyText(lp.amount) : "—") + " on " + prettyDate(lp.paid_on);
+  show("f_lastpaid", !!lp);
+  if(lp) $("f_lastpaid").textContent = "Last paid: " + (lp.amount != null ? moneyText(lp.amount) : "—") + " on " + prettyDate(lp.paid_on);
   $("f_err").style.display = "none";
-  $("deleteBtn").style.display = it ? "block" : "none";
-  $("overlay").classList.add("open");
+  show("deleteBtn", !!it);
+  openSheet("formSheet");
 }
-function closeForm(){ $("overlay").classList.remove("open"); }
-function formError(t){ const e=$("f_err"); e.textContent=t; e.style.display="block"; }
+async function onNewAccountOption(e){
+  if(e.target.value !== "__new") return;
+  const n = prompt("New bank account or card name:");
+  if(n && n.trim()){
+    const { data, error } = await sb.from("accounts").insert({ name: n.trim() }).select().single();
+    if(error){ alert("Could not add: " + error.message); e.target.value = ""; return; }
+    accounts.push(data); accounts.sort((x,y) => x.name.localeCompare(y.name));
+    $("f_method").innerHTML = methodOptions(data.name);
+  } else e.target.value = "";
+}
+function closeForm(){ closeSheet("formSheet"); }
+function formError(t){ const el = $("f_err"); el.textContent = t; el.style.display = "block"; }
 async function saveItem(){
   const name = $("f_name").value.trim();
   const amount = $("f_amount").value;
@@ -549,17 +554,17 @@ async function saveItem(){
   const due = $("f_due").value;
   const method = $("f_method").value;
   if(!name) return formError("Name is required.");
-  if(amount==="" || isNaN(Number(amount)) || Number(amount) < 0) return formError("Planned amount is required.");
-  if(unit!=="once" && (!n || n < 1)) return formError("Enter how often it repeats (1 or more).");
+  if(amount === "" || isNaN(Number(amount)) || Number(amount) < 0) return formError("Planned amount is required.");
+  if(unit !== "once" && (!n || n < 1)) return formError("Enter how often it repeats (1 or more).");
   if(!due) return formError("Next bill due date is required.");
-  if(!method || method==="__new") return formError("Select the account it's paid with.");
+  if(!method || method === "__new") return formError("Select the account it's paid with.");
   $("saveBtn").disabled = true;
   const rec = {
     name,
     amount: Number(amount),
     currency: "USD",
     cycle_unit: unit,
-    cycle_count: unit==="once" ? null : n,
+    cycle_count: unit === "once" ? null : n,
     next_due: due,
     payment_method: method,
     notes: $("f_notes").value.trim() || null,
@@ -570,43 +575,41 @@ async function saveItem(){
     : sb.from("subscriptions").insert(rec);
   const { error } = await q;
   $("saveBtn").disabled = false;
-  if(error){ formError("Save failed: "+error.message); return; }
+  if(error) return formError("Save failed: " + error.message);
   closeForm(); await load();
 }
 async function delItem(){
   if(!editingId || !confirm("Delete this subscription?")) return;
   const { error } = await sb.from("subscriptions").delete().eq("id", editingId);
-  if(error){ alert("Delete failed: "+error.message); return; }
+  if(error) return alert("Delete failed: " + error.message);
   closeForm(); await load();
 }
 
-/* ---------- mark paid ---------- */
+/* ================= mark paid ================= */
 function openPay(id){
   if(offline) return;
-  const it = items.find(x=>x.id===id);
+  const it = items.find(x => x.id === id);
   if(!it) return;
   payingId = id;
   $("payTitle").textContent = "Mark paid — " + it.name;
   $("p_amount").value = it.amount ?? "";
   $("p_date").value = it.next_due || iso(today());
   $("p_err").style.display = "none";
-  $("payOverlay").classList.add("open");
+  openSheet("paySheet");
 }
-function closePay(){ $("payOverlay").classList.remove("open"); payingId = null; }
+function closePay(){ closeSheet("paySheet"); payingId = null; }
 async function confirmPay(){
-  const it = items.find(x=>x.id===payingId);
+  const it = items.find(x => x.id === payingId);
   if(!it) return;
-  const amt = $("p_amount").value;
-  const date = $("p_date").value;
-  const err = t => { const e=$("p_err"); e.textContent=t; e.style.display="block"; };
-  if(amt==="" || isNaN(Number(amt)) || Number(amt) < 0) return err("Enter the amount you actually paid.");
+  const err = t => { const el = $("p_err"); el.textContent = t; el.style.display = "block"; };
+  const amt = $("p_amount").value, date = $("p_date").value;
+  if(amt === "" || isNaN(Number(amt)) || Number(amt) < 0) return err("Enter the amount you actually paid.");
   if(!date) return err("Select the payment date.");
   $("payBtn").disabled = true;
   const { error: pErr } = await sb.from("payments").insert({ subscription_id: payingId, amount: Number(amt), paid_on: date });
-  if(pErr){ $("payBtn").disabled = false; return err("Could not record payment: "+pErr.message); }
-  const { unit } = cyc(it);
+  if(pErr){ $("payBtn").disabled = false; return err("Could not record payment: " + pErr.message); }
   let upd;
-  if(unit === "once"){
+  if(cyc(it).unit === "once"){
     upd = { active: false };
   } else {
     let next = addCycle(it.next_due, it);
@@ -615,61 +618,66 @@ async function confirmPay(){
   }
   const { error } = await sb.from("subscriptions").update(upd).eq("id", payingId);
   $("payBtn").disabled = false;
-  if(error) return err("Update failed: "+error.message);
+  if(error) return err("Update failed: " + error.message);
   closePay(); await load();
 }
 
-/* ---------- accounts sheet ---------- */
-function openAccts(){ if(offline){ alert("You're offline — account changes need a connection."); return; } renderAccts(); $("acctOverlay").classList.add("open"); }
-function closeAccts(){ $("acctOverlay").classList.remove("open"); render(); }
+/* ================= bank accounts ================= */
+function openAccts(){
+  if(offline) return alert("You're offline — account changes need a connection.");
+  renderAccts();
+  openSheet("acctSheet");
+}
+function closeAccts(){ closeSheet("acctSheet"); render(); }
 function renderAccts(){
   const showAll = $("showInactive").checked;
   const list = accounts.filter(a => showAll || a.active);
   $("acctList").innerHTML = list.length
     ? list.map(a =>
         '<div class="acct">'
-        +'<div class="nm'+(a.active?"":" off")+'">'+esc(a.name)+(a.active?"":'<span class="tag">inactive</span>')+'</div>'
-        +'<div class="btns">'
-        +'<button class="tbtn" onclick="renameAcct(\''+a.id+'\')">Rename</button>'
-        +'<button class="tbtn" onclick="toggleAcct(\''+a.id+'\','+(!a.active)+')">'+(a.active?"Deactivate":"Reactivate")+'</button>'
-        +'</div></div>').join("")
+        + '<div class="nm' + (a.active ? "" : " off") + '">' + esc(a.name) + (a.active ? "" : '<span class="tag">inactive</span>') + '</div>'
+        + '<div class="btns">'
+        +   '<button class="tbtn" onclick="renameAcct(\'' + a.id + '\')">Rename</button>'
+        +   '<button class="tbtn" onclick="toggleAcct(\'' + a.id + '\',' + (!a.active) + ')">' + (a.active ? "Deactivate" : "Reactivate") + '</button>'
+        + '</div></div>').join("")
     : '<div class="empty" style="padding:20px 0">No accounts yet. Add your first one below.</div>';
 }
 async function addAcct(){
   const n = $("newAcct").value.trim();
   if(!n) return;
-  if(accounts.some(a=>a.name.toLowerCase()===n.toLowerCase())){ alert("That account already exists."); return; }
-  const { data, error } = await sb.from("accounts").insert({ name:n }).select().single();
-  if(error){ alert("Could not add: "+error.message); return; }
-  accounts.push(data); accounts.sort((x,y)=>x.name.localeCompare(y.name));
+  if(accounts.some(a => a.name.toLowerCase() === n.toLowerCase())) return alert("That account already exists.");
+  const { data, error } = await sb.from("accounts").insert({ name: n }).select().single();
+  if(error) return alert("Could not add: " + error.message);
+  accounts.push(data); accounts.sort((x,y) => x.name.localeCompare(y.name));
   $("newAcct").value = "";
   renderAccts();
 }
 async function renameAcct(id){
-  const a = accounts.find(x=>x.id===id);
+  const a = accounts.find(x => x.id === id);
   if(!a) return;
   const n = prompt("Account name:", a.name);
   if(n === null) return;
   const name = n.trim();
   if(!name || name === a.name) return;
-  if(accounts.some(x=>x.id!==id && x.name.toLowerCase()===name.toLowerCase())){ alert("That name is already used."); return; }
+  if(accounts.some(x => x.id !== id && x.name.toLowerCase() === name.toLowerCase())) return alert("That name is already used.");
   const old = a.name;
   const { error } = await sb.from("accounts").update({ name }).eq("id", id);
-  if(error){ alert("Could not rename: "+error.message); return; }
+  if(error) return alert("Could not rename: " + error.message);
   const { error: e2 } = await sb.from("subscriptions").update({ payment_method: name }).eq("payment_method", old);
-  if(e2){ alert("Renamed the account, but updating subscriptions failed: "+e2.message); }
+  if(e2) alert("Renamed the account, but updating subscriptions failed: " + e2.message);
   if(filter === old) filter = name;
   await load();
   renderAccts();
 }
 async function toggleAcct(id, active){
   const { error } = await sb.from("accounts").update({ active }).eq("id", id);
-  if(error){ alert("Could not update: "+error.message); return; }
-  const a = accounts.find(x=>x.id===id); if(a) a.active = active;
+  if(error) return alert("Could not update: " + error.message);
+  const a = accounts.find(x => x.id === id);
+  if(a) a.active = active;
   renderAccts();
 }
 
-/* ---------- self-update ---------- */
+/* ================= self-update ================= */
 async function checkForUpdate(){
   try{
     const res = await fetch(location.pathname + "?u=" + Date.now(), { cache: "no-store" });
@@ -687,5 +695,5 @@ checkForUpdate();
 init();
 </script>
 </body>
-<!-- v3.8 -->
+<!-- v4.0 -->
 </html>
