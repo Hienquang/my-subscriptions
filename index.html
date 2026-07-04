@@ -170,7 +170,7 @@
     <button class="tbtn" onclick="openAccts()">Bank accounts</button>
     <button class="tbtn" onclick="changePassword()">Change password</button>
     <button class="tbtn" onclick="signOut()">Sign out</button>
-    <span class="tbtn" style="cursor:default;opacity:.6">v3.2</span>
+    <span class="tbtn" id="verLabel" style="cursor:default;opacity:.6">v3.3</span>
   </div>
 
   <button class="fab" onclick="openForm()" aria-label="Add subscription">+</button>
@@ -244,6 +244,7 @@
 </div>
 
 <script>
+const APP_VERSION = "3.3";
 const SUPABASE_URL = "https://anpvflizwcmyefbxsfpx.supabase.co";
 const SUPABASE_KEY = "sb_publishable_Va_eUdkFSmtD4uKqNIvppw_wlB1eEYJ";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { flowType: "implicit", detectSessionInUrl: true } });
@@ -648,8 +649,23 @@ async function toggleAcct(id, active){
   renderAccts();
 }
 
+/* ---------- self-update ---------- */
+async function checkForUpdate(){
+  try{
+    const res = await fetch(location.pathname + "?u=" + Date.now(), { cache: "no-store" });
+    if(!res.ok) return;
+    const m = (await res.text()).match(/APP_VERSION = "([\d.]+)"/);
+    if(!m || m[1] === APP_VERSION) return;
+    if(sessionStorage.getItem("reloadedFor") === m[1]) return;
+    sessionStorage.setItem("reloadedFor", m[1]);
+    location.reload();
+  }catch(e){}
+}
+document.addEventListener("visibilitychange", () => { if(document.visibilityState === "visible") checkForUpdate(); });
+checkForUpdate();
+
 init();
 </script>
 </body>
-<!-- v3.2 -->
+<!-- v3.3 -->
 </html>
