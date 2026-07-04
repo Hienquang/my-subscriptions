@@ -91,17 +91,12 @@
 <!-- AUTH -->
 <div id="authView" class="wrap auth" style="display:none">
   <h1>💳 My Subscriptions</h1>
-  <p>Sign in with your email to see your subscriptions on any device.</p>
-  <div id="stepEmail">
-    <input id="email" type="email" placeholder="you@email.com" autocomplete="email">
-    <button class="btn" id="sendBtn" onclick="sendCode()">Send login link</button>
-  </div>
-  <div id="stepCode" style="display:none">
-    <p style="margin-bottom:12px">Now open your email <b>on this device</b> and tap the <b>Sign in</b> link. You'll come right back here, signed in.</p>
-    <input id="code" type="text" inputmode="numeric" placeholder="Or enter code (if email shows one)" autocomplete="one-time-code">
-    <button class="btn" id="verifyBtn" onclick="verifyCode()">Sign in with code</button>
-    <button class="btn-ghost" onclick="backToEmail()">Use a different email</button>
-  </div>
+  <p>Sign in to see your subscriptions on any device.</p>
+  <input id="email" type="email" placeholder="you@email.com" autocomplete="email">
+  <input id="password" type="password" placeholder="Password" autocomplete="current-password">
+  <button class="btn" id="signInBtn" onclick="signIn()">Sign in</button>
+  <button class="btn-ghost" onclick="signUpNew()">New here? Create an account</button>
+  <button class="btn-ghost" onclick="sendLink()">Forgot password? Email me a sign-in link</button>
   <div id="authMsg" class="msg"></div>
 </div>
 
@@ -112,7 +107,10 @@
       <h1>My Subscriptions</h1>
       <div class="sub" id="userEmail"></div>
     </div>
-    <button class="btn-ghost" onclick="signOut()">Sign out</button>
+    <div>
+      <button class="btn-ghost" onclick="changePassword()">Password</button>
+      <button class="btn-ghost" onclick="signOut()">Sign out</button>
+    </div>
   </header>
 
   <div class="summary">
@@ -194,26 +192,40 @@ async function showApp(session){
   $("userEmail").textContent = session.user.email;
   await load();
 }
-async function sendCode(){
-  const email = $("email").value.trim();
-  if(!email){ setMsg("Please enter your email.", true); return; }
-  $("sendBtn").disabled = true; setMsg("Sending…");
-  const { error } = await sb.auth.signInWithOtp({ email, options:{ shouldCreateUser:true, emailRedirectTo: location.origin + location.pathname } });
-  $("sendBtn").disabled = false;
+async function signIn(){
+  const email = $("email").value.trim(), password = $("password").value;
+  if(!email || !password){ setMsg("Enter your email and password.", true); return; }
+  $("signInBtn").disabled = true; setMsg("Signing in…");
+  const { error } = await sb.auth.signInWithPassword({ email, password });
+  $("signInBtn").disabled = false;
+  if(error) setMsg(error.message === "Invalid login credentials"
+    ? "Wrong email or password. New here? Tap “Create an account” below."
+    : error.message, true);
+}
+async function signUpNew(){
+  const email = $("email").value.trim(), password = $("password").value;
+  if(!email){ setMsg("Enter your email above first.", true); return; }
+  if(!password || password.length < 8){ setMsg("Choose a password of at least 8 characters, then tap Create an account.", true); return; }
+  setMsg("Creating account…");
+  const { data, error } = await sb.auth.signUp({ email, password });
   if(error){ setMsg(error.message, true); return; }
-  pendingEmail = email;
-  $("stepEmail").style.display="none"; $("stepCode").style.display="block";
-  setMsg("Login link sent to " + email + ".");
+  if(!data.session) setMsg("Almost done — check your email to confirm your account.");
 }
-async function verifyCode(){
-  const token = $("code").value.trim();
-  if(!token || !pendingEmail) return;
-  $("verifyBtn").disabled = true; setMsg("Verifying…");
-  const { error } = await sb.auth.verifyOtp({ email: pendingEmail, token, type: "email" });
-  $("verifyBtn").disabled = false;
-  if(error) setMsg(error.message, true);
+async function sendLink(){
+  const email = $("email").value.trim();
+  if(!email){ setMsg("Enter your email above first.", true); return; }
+  setMsg("Sending…");
+  const { error } = await sb.auth.signInWithOtp({ email, options:{ shouldCreateUser:true, emailRedirectTo: location.origin + location.pathname } });
+  if(error){ setMsg(error.message, true); return; }
+  setMsg("Link sent to " + email + ". Open it on this device, then set a new password via the “Password” button.");
 }
-function backToEmail(){ $("stepCode").style.display="none"; $("stepEmail").style.display="block"; setMsg(""); }
+async function changePassword(){
+  const p = prompt("New password (at least 8 characters):");
+  if(p === null) return;
+  if(p.length < 8){ alert("Password must be at least 8 characters."); return; }
+  const { error } = await sb.auth.updateUser({ password: p });
+  alert(error ? "Could not set password: " + error.message : "Password saved. Use it to sign in on any device.");
+}
 function setMsg(t, err){ const m=$("authMsg"); m.textContent=t; m.className="msg"+(err?" err":""); }
 async function signOut(){ await sb.auth.signOut(); }
 
