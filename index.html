@@ -78,6 +78,11 @@
   .empty{text-align:center;color:var(--muted);padding:44px 16px;font-size:.88rem;font-style:italic}
   .fab{position:fixed;right:20px;bottom:calc(env(safe-area-inset-bottom) + 20px);width:52px;height:52px;border-radius:50%;background:var(--accent);color:var(--on-accent);font-size:1.5rem;line-height:1;display:flex;align-items:center;justify-content:center}
 
+  /* ---------- ember glow (the one celebration: fades off a just-paid row) ---------- */
+  @keyframes ember{0%{box-shadow:0 0 16px 3px var(--ember)}100%{box-shadow:0 0 18px 4px rgba(232,169,79,0)}}
+  .item.ember{animation:ember 1s ease-out;border-radius:10px}
+  @media (prefers-reduced-motion:reduce){.item.ember{animation:none}}
+
   /* ---------- responsive ---------- */
   @media (min-width:641px){.fab{display:none}}
   @media (max-width:640px){
@@ -186,7 +191,7 @@
     <button class="tbtn" onclick="openAccts()">Bank accounts</button>
     <button class="tbtn" onclick="changePassword()">Change password</button>
     <button class="tbtn" onclick="signOut()">Sign out</button>
-    <span class="tbtn" style="cursor:default;opacity:.6">v5.0</span>
+    <span class="tbtn" style="cursor:default;opacity:.6">v5.1</span>
   </div>
 
   <button class="fab" onclick="openForm()" aria-label="Add subscription">+</button>
@@ -256,13 +261,13 @@
 "use strict";
 
 /* ================= constants & state ================= */
-const APP_VERSION = "5.0";
+const APP_VERSION = "5.1";
 const SUPABASE_URL = "https://anpvflizwcmyefbxsfpx.supabase.co";
 const SUPABASE_KEY = "sb_publishable_Va_eUdkFSmtD4uKqNIvppw_wlB1eEYJ";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { flowType: "implicit", detectSessionInUrl: true } });
 
 let items = [], accounts = [], lastPay = {};
-let editingId = null, payingId = null, offline = false;
+let editingId = null, payingId = null, justPaidId = null, offline = false;
 let filter = "all";
 let view = localStorage.getItem("view") || "week";
 let tab = "this";
@@ -476,6 +481,7 @@ function dueLabel(it){
   return '<div class="due">' + prettyDate(it.next_due) + '</div>';
 }
 function renderList(){
+  const glowId = justPaidId; justPaidId = null;   // one-shot: glow only on the render right after a payment
   const shown = visibleItems();
   const unit = view === "week" ? "week" : "month";
   if(!shown.length){
@@ -487,7 +493,7 @@ function renderList(){
   }
   $("list").innerHTML = shown.map(it => {
     const canPay = it.active && it.next_due;
-    return '<div class="item' + (it.active ? "" : " inactive") + '">'
+    return '<div class="item' + (it.active ? "" : " inactive") + (it.id === glowId ? " ember" : "") + '">'
       + '<div class="info" onclick="openForm(&quot;' + it.id + '&quot;)">'
       +   '<div class="name">' + esc(it.name) + '</div>'
       +   '<div class="meta">' + esc(it.payment_method || "no account set") + ' · ' + cycleLabel(it) + (it.notes ? ' · ' + esc(it.notes) : '') + '</div>'
@@ -624,6 +630,7 @@ async function confirmPay(){
   const { error } = await sb.from("subscriptions").update(upd).eq("id", payingId);
   $("payBtn").disabled = false;
   if(error) return err("Update failed: " + error.message);
+  justPaidId = payingId;
   closePay(); await load();
 }
 
@@ -700,5 +707,5 @@ checkForUpdate();
 init();
 </script>
 </body>
-<!-- v5.0 -->
+<!-- v5.1 -->
 </html>
