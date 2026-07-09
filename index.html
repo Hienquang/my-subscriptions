@@ -60,6 +60,16 @@
   .chip{flex:0 0 auto;border:1px solid var(--line-strong);background:var(--chip-bg);color:var(--muted);border-radius:20px;padding:5px 12px;font-size:.76rem}
   .chip.on{color:var(--text);border-color:var(--accent);background:var(--accent-soft)}
 
+  /* ---------- search ---------- */
+  .searchwrap{position:relative;margin:10px 0 2px}
+  .searchwrap input{width:100%;padding:9px 38px 9px 12px;border:1px solid var(--line-strong);border-radius:10px;font-size:.9rem;background:var(--sheet);color:var(--text);font-family:inherit}
+  .searchwrap input::placeholder{color:var(--faint);font-style:italic}
+  .searchwrap input:focus{outline:none;border-color:var(--accent)}
+  .searchwrap input::-webkit-search-cancel-button,.searchwrap input::-webkit-search-decoration{-webkit-appearance:none;appearance:none}
+  .searchwrap .qclear{position:absolute;right:4px;top:50%;transform:translateY(-50%);color:var(--faint);font-size:1rem;padding:6px 10px;display:none}
+  .searchwrap .qclear:hover{color:var(--text)}
+  .searchwrap.hasq .qclear{display:block}
+
   /* ---------- list ---------- */
   .item{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:13px 0;border-top:1px solid var(--line)}
   #list .item:first-child{border-top:none}
@@ -77,6 +87,21 @@
   .paybtn:active{background:var(--accent);color:var(--on-accent)}
   .empty{text-align:center;color:var(--muted);padding:44px 16px;font-size:.88rem;font-style:italic}
   .fab{position:fixed;right:20px;bottom:calc(env(safe-area-inset-bottom) + 20px);width:52px;height:52px;border-radius:50%;background:var(--accent);color:var(--on-accent);font-size:1.5rem;line-height:1;display:flex;align-items:center;justify-content:center}
+
+  /* ---------- undo toast ---------- */
+  .undobar{position:fixed;left:50%;transform:translate(-50%,calc(100% + 30px));bottom:calc(env(safe-area-inset-bottom) + 20px);z-index:15;
+    display:flex;align-items:center;gap:16px;background:var(--sheet-raised);border:1px solid var(--line-strong);border-left:3px solid var(--accent);
+    border-radius:10px;padding:11px 16px;font-size:.85rem;max-width:min(92vw,480px);box-shadow:0 6px 24px rgba(0,0,0,.45);
+    transition:transform .25s ease,opacity .25s ease;white-space:nowrap;opacity:0;pointer-events:none}
+  .undobar.show{transform:translate(-50%,0);opacity:1;pointer-events:auto}
+  .undobar .txt{overflow:hidden;text-overflow:ellipsis;font-style:italic;color:var(--muted)}
+  .undobar .txt b{color:var(--text);font-weight:400;font-style:normal}
+  .undobar button{color:var(--accent);font-size:.78rem;text-transform:uppercase;letter-spacing:2px;flex:0 0 auto}
+  @media (max-width:640px){.undobar{bottom:calc(env(safe-area-inset-bottom) + 86px)}}
+  @media (prefers-reduced-motion:reduce){.undobar{transition:none}}
+
+  /* ---------- recently deleted ---------- */
+  .trashnote{font-size:.78rem;color:var(--faint);font-style:italic;margin-top:12px}
 
   /* ---------- ember glow (the one celebration: fades off a just-paid row) ---------- */
   @keyframes ember{0%{box-shadow:0 0 16px 3px var(--ember)}100%{box-shadow:0 0 18px 4px rgba(232,169,79,0)}}
@@ -143,13 +168,13 @@
   .acctadd button{border:1px solid var(--line-strong);border-radius:8px;padding:0 16px;font-size:.85rem}
 
   /* 16px inputs on mobile so iOS Safari doesn't auto-zoom on focus (must come
-     after the .field/.acctadd rules above or the cascade overrides it) */
+     after the .field/.acctadd/.searchwrap rules above or the cascade overrides it) */
   @media (max-width:640px){
-    .field input,.field select,.field textarea,.acctadd input{font-size:16px}
+    .field input,.field select,.field textarea,.acctadd input,.searchwrap input{font-size:16px}
   }
 
   /* ---------- footer ---------- */
-  .foot{display:flex;justify-content:center;gap:26px;margin-top:48px;padding-top:18px;border-top:1px solid var(--line)}
+  .foot{display:flex;flex-wrap:wrap;justify-content:center;gap:14px 26px;margin-top:48px;padding-top:18px;border-top:1px solid var(--line)}
 </style>
 </head>
 <body>
@@ -184,14 +209,19 @@
     </div>
   </div>
   <div class="tabs" id="tabs"></div>
+  <div class="searchwrap" id="searchWrap">
+    <input id="q" type="search" placeholder="Search subscriptions…" autocomplete="off" oninput="setQuery(this.value)">
+    <button class="qclear" aria-label="Clear search" onclick="clearQuery()">✕</button>
+  </div>
   <div class="chips" id="chips"></div>
   <div id="list"></div>
 
   <div class="foot">
     <button class="tbtn" onclick="openAccts()">Bank accounts</button>
+    <button class="tbtn" id="trashBtn" onclick="openTrash()">Recently deleted</button>
     <button class="tbtn" onclick="changePassword()">Change password</button>
     <button class="tbtn" onclick="signOut()">Sign out</button>
-    <span class="tbtn" style="cursor:default;opacity:.6">v5.1</span>
+    <span class="tbtn" style="cursor:default;opacity:.6">v5.2</span>
   </div>
 
   <button class="fab" onclick="openForm()" aria-label="Add subscription">+</button>
@@ -241,6 +271,20 @@
   </div>
 </div>
 
+<div class="overlay" id="trashSheet" onclick="if(event.target===this)closeTrash()">
+  <div class="sheet">
+    <h2>Recently deleted</h2>
+    <div id="trashList"></div>
+    <p class="trashnote">Deleted subscriptions stay here (with their payment history) until you restore them or delete them for good. “Delete forever” also erases their payment history.</p>
+    <button class="ghost" style="margin-top:8px" onclick="closeTrash()">Close</button>
+  </div>
+</div>
+
+<div class="undobar" id="undoBar">
+  <span class="txt">Deleted <b id="undoName"></b></span>
+  <button onclick="undoDelete()">Undo</button>
+</div>
+
 <div class="overlay" id="acctSheet" onclick="if(event.target===this)closeAccts()">
   <div class="sheet">
     <h2>Bank accounts</h2>
@@ -261,14 +305,15 @@
 "use strict";
 
 /* ================= constants & state ================= */
-const APP_VERSION = "5.1";
+const APP_VERSION = "5.2";
 const SUPABASE_URL = "https://anpvflizwcmyefbxsfpx.supabase.co";
 const SUPABASE_KEY = "sb_publishable_Va_eUdkFSmtD4uKqNIvppw_wlB1eEYJ";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { flowType: "implicit", detectSessionInUrl: true } });
 
-let items = [], accounts = [], lastPay = {};
+let items = [], deletedItems = [], accounts = [], lastPay = {};
 let editingId = null, payingId = null, justPaidId = null, offline = false;
-let filter = "all";
+let filter = "all", query = "";
+let undoItem = null, undoTimer = null;
 let view = localStorage.getItem("view") || "week";
 let tab = "this";
 
@@ -377,11 +422,11 @@ function setOffline(v){
   document.body.classList.toggle("off", v);
   show("offbar", v);
 }
-function saveCache(){ try{ localStorage.setItem("cache", JSON.stringify({ items, accounts, lastPay })); }catch(e){} }
+function saveCache(){ try{ localStorage.setItem("cache", JSON.stringify({ items, deletedItems, accounts, lastPay })); }catch(e){} }
 function useCache(){
   try{
     const c = JSON.parse(localStorage.getItem("cache") || "null");
-    if(c){ items = c.items || []; accounts = c.accounts || []; lastPay = c.lastPay || {}; }
+    if(c){ items = c.items || []; deletedItems = c.deletedItems || []; accounts = c.accounts || []; lastPay = c.lastPay || {}; }
   }catch(e){}
   render();
 }
@@ -400,7 +445,9 @@ async function load(){
   }catch(e){ setOffline(true); useCache(); return; }
   if(s.error){ setOffline(true); useCache(); return; }
   setOffline(false);
-  items = s.data || [];
+  const all = s.data || [];
+  items = all.filter(i => !i.deleted_at);
+  deletedItems = all.filter(i => i.deleted_at).sort((x,y) => x.deleted_at < y.deleted_at ? 1 : -1);
   accounts = a.data || [];
   lastPay = {};
   (p.data || []).forEach(r => { if(!(r.subscription_id in lastPay)) lastPay[r.subscription_id] = r; });
@@ -455,8 +502,21 @@ function renderControls(){
       .join("")
     : "";
 }
+function matchesQuery(i){
+  const q = query.trim().toLowerCase();
+  if(!q) return true;
+  return [i.name, i.notes, i.payment_method, cycleLabel(i)].some(f => f && String(f).toLowerCase().includes(q));
+}
 function visibleItems(){
   const { thisEnd, nextEnd } = periodEnds();
+  if(query.trim()){
+    // searching looks through EVERYTHING (all tabs, all accounts) so nothing hides
+    return items.filter(matchesQuery).sort((a,b) => {
+      if(a.active !== b.active) return a.active ? -1 : 1;
+      const da = a.next_due || "9999", db = b.next_due || "9999";
+      return da < db ? -1 : da > db ? 1 : 0;
+    });
+  }
   return items
     .filter(i => filter === "all" || i.payment_method === filter)
     .filter(i => {
@@ -485,7 +545,8 @@ function renderList(){
   const shown = visibleItems();
   const unit = view === "week" ? "week" : "month";
   if(!shown.length){
-    const txt = tab === "this" ? "Nothing due or overdue this " + unit + "."
+    const txt = query.trim() ? "No matches for “" + esc(query.trim()) + "”."
+      : tab === "this" ? "Nothing due or overdue this " + unit + "."
       : tab === "next" ? "Nothing due next " + unit + "."
       : "No subscriptions yet.<br>Tap + to add your first one.";
     $("list").innerHTML = '<div class="empty">' + txt + '</div>';
@@ -507,6 +568,8 @@ function renderList(){
   }).join("");
 }
 function setFilter(f){ filter = f; render(); }
+function setQuery(v){ query = v; $("searchWrap").classList.toggle("hasq", !!v.trim()); renderList(); }
+function clearQuery(){ $("q").value = ""; setQuery(""); }
 function setView(v){ view = v; try{ localStorage.setItem("view", v); }catch(e){} render(); }
 function setTab(t){ tab = t; render(); }
 
@@ -590,10 +653,62 @@ async function saveItem(){
   closeForm(); await load();
 }
 async function delItem(){
-  if(!editingId || !confirm("Delete this subscription?")) return;
-  const { error } = await sb.from("subscriptions").delete().eq("id", editingId);
+  if(!editingId || !confirm("Delete this subscription? You can restore it any time from “Recently deleted”.")) return;
+  const it = items.find(x => x.id === editingId);
+  const { error } = await sb.from("subscriptions").update({ deleted_at: new Date().toISOString() }).eq("id", editingId);
   if(error) return alert("Delete failed: " + error.message);
   closeForm(); await load();
+  if(it) showUndo(it);
+}
+
+/* ================= undo & recently deleted ================= */
+function showUndo(it){
+  undoItem = it;
+  $("undoName").textContent = it.name;
+  $("undoBar").classList.add("show");
+  clearTimeout(undoTimer);
+  undoTimer = setTimeout(hideUndo, 8000);
+}
+function hideUndo(){ $("undoBar").classList.remove("show"); undoItem = null; }
+async function undoDelete(){
+  if(!undoItem) return;
+  const id = undoItem.id;
+  hideUndo();
+  const { error } = await sb.from("subscriptions").update({ deleted_at: null }).eq("id", id);
+  if(error) return alert("Could not undo: " + error.message);
+  await load();
+}
+function openTrash(){
+  if(offline) return alert("You're offline — restoring needs a connection.");
+  renderTrash();
+  openSheet("trashSheet");
+}
+function closeTrash(){ closeSheet("trashSheet"); }
+function renderTrash(){
+  $("trashList").innerHTML = deletedItems.length
+    ? deletedItems.map(it =>
+        '<div class="acct">'
+        + '<div class="nm">' + esc(it.name)
+        +   '<span class="tag">' + (it.amount ? moneyText(it.amount) + " · " : "") + "deleted " + prettyDate(it.deleted_at.slice(0,10)) + '</span></div>'
+        + '<div class="btns">'
+        +   '<button class="tbtn" onclick="restoreItem(\'' + it.id + '\')">Restore</button>'
+        +   '<button class="tbtn" style="color:var(--warn)" onclick="purgeItem(\'' + it.id + '\')">Delete forever</button>'
+        + '</div></div>').join("")
+    : '<div class="empty" style="padding:20px 0">Nothing here — you haven’t deleted any subscriptions.</div>';
+}
+async function restoreItem(id){
+  const { error } = await sb.from("subscriptions").update({ deleted_at: null }).eq("id", id);
+  if(error) return alert("Could not restore: " + error.message);
+  await load();
+  renderTrash();
+}
+async function purgeItem(id){
+  const it = deletedItems.find(x => x.id === id);
+  if(!confirm("Permanently delete “" + (it ? it.name : "this subscription") + "” and its payment history? This cannot be undone.")) return;
+  const { error } = await sb.from("subscriptions").delete().eq("id", id);
+  if(error) return alert("Could not delete: " + error.message);
+  await load();
+  renderTrash();
 }
 
 /* ================= mark paid ================= */
@@ -707,5 +822,5 @@ checkForUpdate();
 init();
 </script>
 </body>
-<!-- v5.1 -->
+<!-- v5.2 -->
 </html>
