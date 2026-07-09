@@ -221,7 +221,7 @@
     <button class="tbtn" id="trashBtn" onclick="openTrash()">Recently deleted</button>
     <button class="tbtn" onclick="changePassword()">Change password</button>
     <button class="tbtn" onclick="signOut()">Sign out</button>
-    <span class="tbtn" style="cursor:default;opacity:.6">v5.2</span>
+    <span class="tbtn" style="cursor:default;opacity:.6">v5.3</span>
   </div>
 
   <button class="fab" onclick="openForm()" aria-label="Add subscription">+</button>
@@ -305,7 +305,7 @@
 "use strict";
 
 /* ================= constants & state ================= */
-const APP_VERSION = "5.2";
+const APP_VERSION = "5.3";
 const SUPABASE_URL = "https://anpvflizwcmyefbxsfpx.supabase.co";
 const SUPABASE_KEY = "sb_publishable_Va_eUdkFSmtD4uKqNIvppw_wlB1eEYJ";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { flowType: "implicit", detectSessionInUrl: true } });
@@ -489,6 +489,7 @@ function renderHero(){
 function renderControls(){
   $("segWeek").className = view === "week" ? "on" : "";
   $("segMonth").className = view === "month" ? "on" : "";
+  $("searchWrap").style.display = tab === "all" ? "" : "none";   // search lives on the All tab only
   const unit = view === "week" ? "week" : "month";
   $("tabs").innerHTML =
     '<button class="tab' + (tab==="this" ? " on" : "") + '" onclick="setTab(\'this\')">This ' + unit + '</button>'
@@ -571,7 +572,11 @@ function setFilter(f){ filter = f; render(); }
 function setQuery(v){ query = v; $("searchWrap").classList.toggle("hasq", !!v.trim()); renderList(); }
 function clearQuery(){ $("q").value = ""; setQuery(""); }
 function setView(v){ view = v; try{ localStorage.setItem("view", v); }catch(e){} render(); }
-function setTab(t){ tab = t; render(); }
+function setTab(t){
+  tab = t;
+  if(t !== "all" && query){ query = ""; $("q").value = ""; $("searchWrap").classList.remove("hasq"); }  // leaving All clears the search
+  render();
+}
 
 /* ================= subscription form ================= */
 function methodOptions(current){
@@ -822,5 +827,5 @@ checkForUpdate();
 init();
 </script>
 </body>
-<!-- v5.2 -->
+<!-- v5.3 -->
 </html>
