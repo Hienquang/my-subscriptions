@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#14161C">
+<meta name="theme-color" content="#131722">
 <meta name="color-scheme" content="dark">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -11,72 +11,72 @@
 <title>Due</title>
 <link rel="icon" type="image/png" href="icon-192.png?v=3">
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=3">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=Public+Sans:wght@400;500&display=swap">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-  /* ---------- theme: ink & brass (always dark) ---------- */
+  /* ---------- theme: make camp (On My Way design system, always dark) ---------- */
   :root{
-    --bg:#14161C; --sheet:#1B1E26; --line:#23262E; --line-strong:#333845;
-    --text:#E8E4D8; --muted:#7A7E8A; --accent:#C9A86A; --warn:#C08466;
+    --bg:#131722; --bg-deep:#10131c; --sheet:#1f2432; --sheet-raised:#262c3d;
+    --line:#262c3d; --line-strong:#363d52; --chip-bg:#2a3040;
+    --text:#e3ddcf; --muted:#8d94ad; --faint:#7d8299;
+    --accent:#e8a94f; --accent-soft:#3a2f1c; --on-accent:#131722;
+    --warn:#f7768e; --ember:rgba(232,169,79,.45);
     color-scheme: dark;
   }
   *{box-sizing:border-box;margin:0;padding:0}
   html{background:var(--bg)}
-  body{font-family:'Public Sans',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
-  .serif{font-family:'Fraunces',Georgia,serif}
+  body{font-family:Georgia,'Times New Roman',serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased;line-height:1.5}
+  .serif{font-family:Georgia,'Times New Roman',serif}
   button{font:inherit;cursor:pointer;border:none;background:none;color:inherit}
 
   /* ---------- layout ---------- */
   .wrap{max-width:560px;margin:0 auto;padding:max(calc(env(safe-area-inset-top) + 30px), 64px) 20px 100px}
   header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px}
-  h1{font-family:'Fraunces',Georgia,serif;font-size:1.35rem;font-weight:500;letter-spacing:.01em}
-  .tbtn{color:var(--muted);font-size:.8rem;padding:4px 0}
+  h1{font-size:1.35rem;font-weight:400;font-style:italic;letter-spacing:3px;color:var(--accent)}
+  .tbtn{color:var(--faint);font-size:.8rem;padding:4px 0}
   .tbtn:hover{color:var(--text)}
-  .addbtn{border:1px solid var(--line-strong);border-radius:10px;padding:8px 14px;font-size:.85rem;color:var(--text)}
-  .addbtn:hover{border-color:var(--muted)}
+  .addbtn{border:1px solid var(--line-strong);background:var(--sheet);border-radius:8px;padding:8px 14px;font-size:.85rem;color:var(--text)}
+  .addbtn:hover{border-color:var(--accent);color:var(--accent)}
 
   /* ---------- hero ---------- */
   .hero{margin:20px 0 4px}
-  .total{font-size:1.8rem;font-weight:500;color:var(--accent)}
-  .total .per{font-family:'Public Sans',sans-serif;font-size:.75rem;color:var(--muted);font-weight:400;margin-left:4px}
+  .total{font-size:1.8rem;font-weight:400;color:var(--accent)}
+  .total .per{font-size:.75rem;color:var(--muted);font-weight:400;letter-spacing:1px;text-transform:uppercase;margin-left:4px}
   .total .dec{font-size:.55em;opacity:.75}
-  .duesoon{font-size:.8rem;color:var(--muted);margin-top:5px}
-  .duesoon.warn{color:var(--warn)}
-  .offbar{display:none;background:rgba(192,132,102,.12);color:var(--warn);font-size:.78rem;padding:9px 14px;border-radius:10px;margin-top:14px;text-align:center}
+  .duesoon{font-size:.8rem;color:var(--muted);margin-top:5px;font-style:italic}
+  .duesoon.warn{color:var(--accent)}
+  .offbar{display:none;background:var(--accent);color:var(--on-accent);font-size:.78rem;padding:9px 14px;border-radius:8px;margin-top:14px;text-align:center}
   body.off .fab, body.off .addbtn, body.off .paybtn{opacity:.3;pointer-events:none}
 
   /* ---------- view toggle, tabs, filters ---------- */
   .viewbar{display:flex;justify-content:flex-end;margin-top:14px}
-  .seg{display:inline-flex;border:1px solid var(--line-strong);border-radius:10px;overflow:hidden}
-  .seg button{padding:6px 14px;font-size:.78rem;color:var(--muted)}
-  .seg button.on{background:var(--sheet);color:var(--text)}
+  .seg{display:inline-flex;border:1px solid var(--line-strong);background:var(--sheet);border-radius:8px;overflow:hidden}
+  .seg button{padding:6px 14px;font-size:.72rem;color:var(--faint);text-transform:uppercase;letter-spacing:2px}
+  .seg button.on{background:var(--accent-soft);color:var(--accent)}
   .tabs{display:flex;gap:20px;border-bottom:1px solid var(--line);margin-top:4px}
-  .tab{padding:0 0 9px;font-size:.82rem;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px}
-  .tab.on{color:var(--text);border-color:var(--accent)}
+  .tab{padding:0 0 9px;font-size:.72rem;color:var(--faint);border-bottom:2px solid transparent;margin-bottom:-1px;text-transform:uppercase;letter-spacing:2px}
+  .tab.on{color:var(--accent);border-color:var(--accent)}
   .chips{display:flex;gap:8px;overflow-x:auto;padding:12px 0 4px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
   .chips::-webkit-scrollbar{display:none}
-  .chip{flex:0 0 auto;border:1px solid var(--line-strong);color:var(--muted);border-radius:999px;padding:5px 12px;font-size:.76rem}
-  .chip.on{color:var(--text);border-color:var(--muted)}
+  .chip{flex:0 0 auto;border:1px solid var(--line-strong);background:var(--chip-bg);color:var(--muted);border-radius:20px;padding:5px 12px;font-size:.76rem}
+  .chip.on{color:var(--text);border-color:var(--accent);background:var(--accent-soft)}
 
   /* ---------- list ---------- */
   .item{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:13px 0;border-top:1px solid var(--line)}
   #list .item:first-child{border-top:none}
   .item .info{flex:1;min-width:0;cursor:pointer}
-  .item .name{font-size:.92rem}
-  .item .meta{color:var(--muted);font-size:.73rem;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .item .name{font-size:.95rem}
+  .item .meta{color:var(--muted);font-size:.75rem;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-style:italic}
   .item .right{text-align:right}
-  .item .amt{font-family:'Fraunces',Georgia,serif;font-size:.92rem}
+  .item .amt{font-size:.95rem}
   .amt .dec{font-size:.75em;color:var(--muted)}
-  .due{font-size:.73rem;color:var(--muted);margin-top:2px}
+  .due{font-size:.75rem;color:var(--faint);margin-top:2px}
   .due.hot{color:var(--warn)}
   .due.near{color:var(--text)}
   .item.inactive{opacity:.45}
   .paybtn{flex:0 0 auto;width:38px;height:38px;border:1px solid var(--accent);border-radius:50%;color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:1rem}
-  .paybtn:active{background:var(--accent);color:var(--bg)}
-  .empty{text-align:center;color:var(--muted);padding:44px 16px;font-size:.88rem}
-  .fab{position:fixed;right:20px;bottom:calc(env(safe-area-inset-bottom) + 20px);width:52px;height:52px;border-radius:50%;background:var(--accent);color:var(--bg);font-size:1.5rem;line-height:1;display:flex;align-items:center;justify-content:center}
+  .paybtn:active{background:var(--accent);color:var(--on-accent)}
+  .empty{text-align:center;color:var(--muted);padding:44px 16px;font-size:.88rem;font-style:italic}
+  .fab{position:fixed;right:20px;bottom:calc(env(safe-area-inset-bottom) + 20px);width:52px;height:52px;border-radius:50%;background:var(--accent);color:var(--on-accent);font-size:1.5rem;line-height:1;display:flex;align-items:center;justify-content:center}
 
   /* ---------- responsive ---------- */
   @media (min-width:641px){.fab{display:none}}
@@ -93,11 +93,11 @@
   /* ---------- auth ---------- */
   .auth{max-width:360px;margin:0 auto;padding:max(calc(env(safe-area-inset-top) + 14vh), 16vh) 20px 0;text-align:center}
   .auth h1{font-size:1.5rem;margin-bottom:8px}
-  .auth p{color:var(--muted);font-size:.85rem;margin-bottom:24px}
-  .auth input{width:100%;padding:13px 14px;border:1px solid var(--line-strong);border-radius:10px;font-size:1rem;margin-bottom:12px;background:transparent;color:var(--text)}
-  .auth input::placeholder{color:var(--muted)}
+  .auth p{color:var(--muted);font-size:.85rem;margin-bottom:24px;font-style:italic}
+  .auth input{width:100%;padding:13px 14px;border:1px solid var(--line-strong);border-radius:10px;font-size:1rem;margin-bottom:12px;background:var(--sheet);color:var(--text)}
+  .auth input::placeholder{color:var(--faint)}
   .auth input:focus{outline:none;border-color:var(--accent)}
-  .btn{width:100%;background:var(--accent);color:var(--bg);padding:13px;border-radius:10px;font-weight:500;font-size:.95rem}
+  .btn{width:100%;background:var(--accent);color:var(--on-accent);padding:13px;border-radius:8px;font-weight:700;font-size:.95rem}
   .btn:disabled{opacity:.5}
   .ghost{display:block;width:100%;color:var(--muted);font-size:.8rem;padding:10px 0}
   .ghost:hover{color:var(--text)}
@@ -107,11 +107,11 @@
   /* ---------- sheets (bottom overlays) ---------- */
   .overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:flex-end;justify-content:center;z-index:10}
   .overlay.open{display:flex}
-  .sheet{background:var(--sheet);width:100%;max-width:560px;border-radius:20px 20px 0 0;padding:20px 18px calc(22px + env(safe-area-inset-bottom));max-height:92vh;overflow-y:auto;border-top:1px solid var(--line-strong)}
-  .sheet h2{font-family:'Fraunces',Georgia,serif;font-size:1.05rem;font-weight:500;margin-bottom:14px}
+  .sheet{background:var(--sheet-raised);width:100%;max-width:560px;border-radius:12px 12px 0 0;padding:20px 18px calc(22px + env(safe-area-inset-bottom));max-height:92vh;overflow-y:auto;border-top:1px solid var(--accent)}
+  .sheet h2{font-size:1.1rem;font-weight:400;font-style:italic;margin-bottom:14px}
   .field{margin-bottom:11px}
-  .field label{display:block;font-size:.72rem;color:var(--muted);margin-bottom:5px}
-  .field input,.field select,.field textarea{width:100%;min-width:0;padding:10px 12px;border:1px solid var(--line-strong);border-radius:9px;font-size:.9rem;background:transparent;color:var(--text);font-family:inherit}
+  .field label{display:block;font-size:.7rem;color:var(--faint);margin-bottom:5px;text-transform:uppercase;letter-spacing:1px}
+  .field input,.field select,.field textarea{width:100%;min-width:0;padding:10px 12px;border:1px solid var(--line-strong);border-radius:10px;font-size:.9rem;background:var(--sheet);color:var(--text);font-family:inherit}
   .field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--accent)}
   .field select option{background:var(--sheet)}
   input[type="date"]{-webkit-appearance:none;appearance:none;text-align:left;min-height:41px}
@@ -121,8 +121,8 @@
   .check input{width:17px;height:17px;accent-color:var(--accent)}
   .actions{display:flex;gap:10px;margin-top:6px}
   .actions .btn{flex:1}
-  .danger{border:1px solid var(--line-strong);color:var(--warn);padding:13px 16px;border-radius:10px;font-size:.9rem}
-  .lastpaid{font-size:.78rem;color:var(--muted);margin:-2px 0 10px}
+  .danger{border:1px solid var(--line-strong);color:var(--warn);padding:13px 16px;border-radius:8px;font-size:.9rem}
+  .lastpaid{font-size:.78rem;color:var(--muted);margin:-2px 0 10px;font-style:italic}
   .formerr{font-size:.78rem;color:var(--warn);margin:2px 0 8px;display:none}
 
   /* ---------- accounts sheet ---------- */
@@ -133,9 +133,9 @@
   .acct .nm .tag{font-size:.7rem;color:var(--muted);margin-left:6px}
   .acct .btns{display:flex;gap:14px;flex:0 0 auto}
   .acctadd{display:flex;gap:10px;margin:12px 0 4px}
-  .acctadd input{flex:1;padding:10px 12px;border:1px solid var(--line-strong);border-radius:9px;font-size:.9rem;background:transparent;color:var(--text)}
+  .acctadd input{flex:1;padding:10px 12px;border:1px solid var(--line-strong);border-radius:10px;font-size:.9rem;background:var(--sheet);color:var(--text)}
   .acctadd input:focus{outline:none;border-color:var(--accent)}
-  .acctadd button{border:1px solid var(--line-strong);border-radius:9px;padding:0 16px;font-size:.85rem}
+  .acctadd button{border:1px solid var(--line-strong);border-radius:8px;padding:0 16px;font-size:.85rem}
 
   /* 16px inputs on mobile so iOS Safari doesn't auto-zoom on focus (must come
      after the .field/.acctadd rules above or the cascade overrides it) */
@@ -186,7 +186,7 @@
     <button class="tbtn" onclick="openAccts()">Bank accounts</button>
     <button class="tbtn" onclick="changePassword()">Change password</button>
     <button class="tbtn" onclick="signOut()">Sign out</button>
-    <span class="tbtn" style="cursor:default;opacity:.6">v4.3</span>
+    <span class="tbtn" style="cursor:default;opacity:.6">v5.0</span>
   </div>
 
   <button class="fab" onclick="openForm()" aria-label="Add subscription">+</button>
@@ -256,7 +256,7 @@
 "use strict";
 
 /* ================= constants & state ================= */
-const APP_VERSION = "4.3";
+const APP_VERSION = "5.0";
 const SUPABASE_URL = "https://anpvflizwcmyefbxsfpx.supabase.co";
 const SUPABASE_KEY = "sb_publishable_Va_eUdkFSmtD4uKqNIvppw_wlB1eEYJ";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { flowType: "implicit", detectSessionInUrl: true } });
@@ -700,5 +700,5 @@ checkForUpdate();
 init();
 </script>
 </body>
-<!-- v4.3 -->
+<!-- v5.0 -->
 </html>
