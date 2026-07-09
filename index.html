@@ -88,7 +88,6 @@
     .total{font-size:1.45rem}
     .duesoon{font-size:.74rem}
     .item{padding:11px 0}
-    .field input,.field select,.field textarea{font-size:16px}
   }
 
   /* ---------- auth ---------- */
@@ -138,6 +137,12 @@
   .acctadd input:focus{outline:none;border-color:var(--accent)}
   .acctadd button{border:1px solid var(--line-strong);border-radius:9px;padding:0 16px;font-size:.85rem}
 
+  /* 16px inputs on mobile so iOS Safari doesn't auto-zoom on focus (must come
+     after the .field/.acctadd rules above or the cascade overrides it) */
+  @media (max-width:640px){
+    .field input,.field select,.field textarea,.acctadd input{font-size:16px}
+  }
+
   /* ---------- footer ---------- */
   .foot{display:flex;justify-content:center;gap:26px;margin-top:48px;padding-top:18px;border-top:1px solid var(--line)}
 </style>
@@ -181,7 +186,7 @@
     <button class="tbtn" onclick="openAccts()">Bank accounts</button>
     <button class="tbtn" onclick="changePassword()">Change password</button>
     <button class="tbtn" onclick="signOut()">Sign out</button>
-    <span class="tbtn" style="cursor:default;opacity:.6">v4.2</span>
+    <span class="tbtn" style="cursor:default;opacity:.6">v4.3</span>
   </div>
 
   <button class="fab" onclick="openForm()" aria-label="Add subscription">+</button>
@@ -251,7 +256,7 @@
 "use strict";
 
 /* ================= constants & state ================= */
-const APP_VERSION = "4.2";
+const APP_VERSION = "4.3";
 const SUPABASE_URL = "https://anpvflizwcmyefbxsfpx.supabase.co";
 const SUPABASE_KEY = "sb_publishable_Va_eUdkFSmtD4uKqNIvppw_wlB1eEYJ";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { flowType: "implicit", detectSessionInUrl: true } });
@@ -695,5 +700,5 @@ checkForUpdate();
 init();
 </script>
 </body>
-<!-- v4.2 -->
+<!-- v4.3 -->
 </html>
