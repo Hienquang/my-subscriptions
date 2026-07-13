@@ -221,7 +221,7 @@
     <button class="tbtn" id="trashBtn" onclick="openTrash()">Recently deleted</button>
     <button class="tbtn" onclick="changePassword()">Change password</button>
     <button class="tbtn" onclick="signOut()">Sign out</button>
-    <span class="tbtn" style="cursor:default;opacity:.6">v5.3</span>
+    <span class="tbtn" style="cursor:default;opacity:.6">v5.4</span>
   </div>
 
   <button class="fab" onclick="openForm()" aria-label="Add subscription">+</button>
@@ -305,7 +305,7 @@
 "use strict";
 
 /* ================= constants & state ================= */
-const APP_VERSION = "5.3";
+const APP_VERSION = "5.4";
 const SUPABASE_URL = "https://anpvflizwcmyefbxsfpx.supabase.co";
 const SUPABASE_KEY = "sb_publishable_Va_eUdkFSmtD4uKqNIvppw_wlB1eEYJ";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { flowType: "implicit", detectSessionInUrl: true } });
@@ -448,12 +448,14 @@ async function load(){
   const all = s.data || [];
   items = all.filter(i => !i.deleted_at);
   deletedItems = all.filter(i => i.deleted_at).sort((x,y) => x.deleted_at < y.deleted_at ? 1 : -1);
-  accounts = a.data || [];
-  lastPay = {};
-  (p.data || []).forEach(r => { if(!(r.subscription_id in lastPay)) lastPay[r.subscription_id] = r; });
-  await seedAccounts();
+  if(!a.error){ accounts = a.data || []; await seedAccounts(); }   // on error keep the last known list — never wipe it
+  if(!p.error){
+    lastPay = {};
+    (p.data || []).forEach(r => { if(!(r.subscription_id in lastPay)) lastPay[r.subscription_id] = r; });
+  }
   saveCache();
   render();
+  refreshMethodSelect();   // the add/edit form may be open with a stale (empty) account dropdown
 }
 async function seedAccounts(){
   if(accounts.length) return;
@@ -590,6 +592,12 @@ function methodOptions(current){
   opts.push('<option value="__new">+ New account…</option>');
   return opts.join("");
 }
+function refreshMethodSelect(){   // re-fill the "Paid with" dropdown if the form is open (accounts may have arrived after it opened)
+  if(!$("formSheet").classList.contains("open")) return;
+  const sel = $("f_method"), cur = sel.value;
+  if(cur === "__new") return;   // mid "new account" prompt — leave it alone
+  sel.innerHTML = methodOptions(cur || "");
+}
 function openForm(id){
   if(offline) return;
   editingId = id || null;
@@ -604,6 +612,7 @@ function openForm(id){
   $("f_due").value = it?.next_due || "";
   $("f_method").innerHTML = methodOptions(it?.payment_method || "");
   $("f_method").onchange = onNewAccountOption;
+  if(!accounts.length && navigator.onLine) load();   // dropdown opened empty — fetch accounts; refreshMethodSelect fills it in
   $("f_notes").value = it?.notes || "";
   $("f_active").checked = it ? it.active : true;
   const lp = it && lastPay[it.id];
@@ -827,5 +836,5 @@ checkForUpdate();
 init();
 </script>
 </body>
-<!-- v5.3 -->
+<!-- v5.4 -->
 </html>
