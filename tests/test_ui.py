@@ -134,8 +134,9 @@ def run():
         app.run("closeForm()")
 
         before = len(app.calls("subscriptions", "update"))
-        app.run("window.prompt = () => 'Chase Sapphire'; renameAcct('acct-chase-visa')")
-        app.settle(500)
+        app.run("renameAcct('acct-chase-visa')")
+        app.ask_ok("Chase Sapphire")
+        app.settle(400)
         check("renaming writes to accounts only, never to subscriptions",
               len(app.calls("subscriptions", "update")), before)
         check("the new name shows on the subscription row",
@@ -227,7 +228,7 @@ def run():
     # ------------------------------------- v5.9 delegated events (real clicks)
     with App(subscriptions=basic_set()) as app:
         section("everything is reachable by clicking (v5.9)")
-        check("version label is rendered from APP_VERSION", app.text("#verLabel"), "v5.9")
+        check("version label is rendered from APP_VERSION", app.text("#verLabel"), "v6.0")
         check("the version appears exactly once, from the const",
               app.eval("document.body.innerHTML.split('v' + APP_VERSION).length - 1"), 1)
 
@@ -296,12 +297,124 @@ def run():
 
         check("still no uncaught errors after all that", app.errors_seen, [])
 
+    # -------------------------------------- v6.0 in-app dialogs and keyboard
+    with App(subscriptions=basic_set()) as app:
+        section("in-app dialogs replace prompt/alert/confirm (v6.0)")
+        native = []
+        app.page.on("dialog", lambda d: (native.append(d.type), d.dismiss()))
+
+        app.run("setTab('all'); openForm('sub-gym'); delItem()")
+        check("delete asks in an in-app sheet", app.ask_visible(), True)
+        check("the sheet names what's being deleted", "Gym" in app.text("#askTitle"), True)
+        check("the confirm button is styled as destructive",
+              app.eval("$('askOk').classList.contains('warn')"), True)
+        app.ask_dismiss()
+        check("cancelling deletes nothing",
+              app.eval("items.some(i => i.name === 'Gym')"), True)
+
+        app.run("openAccts(); renameAcct('acct-amex-gold')")
+        check("rename prefills the current name", app.eval("$('askInput').value"), "Amex Gold")
+        app.page.fill("#askInput", "Chase Visa")
+        app.page.click("#askOk")
+        app.settle(150)
+        check("a duplicate name is rejected inline", "already used" in app.text("#askErr"), True)
+        check("and the sheet stays open so the typing isn't lost", app.ask_visible(), True)
+        app.page.fill("#askInput", "")
+        app.page.click("#askOk")
+        app.settle(150)
+        check("an empty name is rejected too", "Enter a name" in app.text("#askErr"), True)
+        app.ask_ok("Amex Platinum")
+        check("a valid name goes through",
+              app.eval("accounts.some(a => a.name === 'Amex Platinum')"), True)
+
+        app.run("changePassword()")
+        check("the password field is masked", app.eval("$('askInput').type"), "password")
+        app.page.fill("#askInput", "short")
+        app.page.click("#askOk")
+        app.settle(150)
+        check("a short password is rejected inline", "8 characters" in app.text("#askErr"), True)
+        app.ask_dismiss()
+
+        check("no native browser dialog was ever triggered", native, [])
+
+    with App(subscriptions=basic_set()) as app:
+        section("keyboard and focus (v6.0)")
+        app.page.click(".fab")
+        app.settle(150)
+        check("opening a sheet moves focus into it",
+              app.eval("$('formSheet').contains(document.activeElement)"), True)
+        app.page.keyboard.press("Escape")
+        app.settle(120)
+        check("Escape closes the sheet", app.eval("$('formSheet').classList.contains('open')"), False)
+        check("and focus returns to the button that opened it",
+              app.eval("document.activeElement.classList.contains('fab')"), True)
+
+        app.run("setTab('all'); openForm('sub-gym'); delItem()")
+        app.settle(150)
+        check("a sheet opened on top of another stacks",
+              app.eval("sheetStack.join(',')"), "formSheet,askSheet")
+        app.page.keyboard.press("Escape")
+        app.settle(150)
+        check("Escape closes only the innermost one", app.eval("sheetStack.join(',')"), "formSheet")
+        app.page.keyboard.press("Escape")
+        app.settle(150)
+        check("a second Escape closes the one behind it", app.eval("sheetStack.length"), 0)
+
+        app.run("openAccts()")
+        app.settle(150)
+        check("Tab stays inside the open sheet", app.page.evaluate("""() => {
+                 const f = focusablesIn($('acctSheet'));
+                 f[f.length - 1].focus();
+                 document.dispatchEvent(new KeyboardEvent('keydown', {key: 'Tab', bubbles: true}));
+                 return $('acctSheet').contains(document.activeElement);
+               }"""), True)
+        check("sheets announce themselves to screen readers",
+              app.eval("$('acctSheet').querySelector('.sheet').getAttribute('role')"), "dialog")
+
+    # ----------------------------------------------------- v6.0 offline shell
+    with App(subscriptions=basic_set()) as app:
+        section("installable / offline shell (v6.0)")
+        check("a manifest is linked", app.eval("!!document.querySelector('link[rel=manifest]')"), True)
+        manifest = app.page.evaluate("""async () => (await fetch('manifest.json')).json()""")
+        check("it declares a standalone display", manifest.get("display"), "standalone")
+        check("it has a maskable icon for Android",
+              any(i.get("purpose") == "maskable" for i in manifest["icons"]), True)
+        check("theme colour matches the app background", manifest.get("theme_color"), "#131722")
+
+        app.page.wait_for_function("navigator.serviceWorker.controller !== null", timeout=8000)
+        check("a service worker takes control",
+              app.eval("!!navigator.serviceWorker.controller"), True)
+        cached = app.page.evaluate("""async () => {
+            const c = await caches.open('due-shell-v1');
+            return (await c.keys()).map(r => new URL(r.url).pathname.split('/').pop());
+        }""")
+        check("the page itself is cached for offline boot", "index.html" in cached, True)
+        check("so is the manifest", "manifest.json" in cached, True)
+        check("the update probe is never cached",
+              [u for u in cached if "?" in u], [])
+
+    with App(subscriptions=basic_set()) as app:
+        section("cold start with no network at all (v6.0)")
+        app.page.wait_for_function("navigator.serviceWorker.controller !== null", timeout=8000)
+        app.run("setTab('all')")
+        app.settle(200)
+        app.ctx.set_offline(True)
+        app.page.reload()                      # the whole point: no network, still opens
+        app.page.wait_for_selector("#appView", state="visible", timeout=8000)
+        app.settle(600)
+        app.run("setTab('all')")
+        check("the app opens from the service worker cache", len(app.names()), 4)
+        check("and says why the data may be stale",
+              "offline" in app.text("#offbar").lower(), True)
+        check("edits are disabled until the network is back",
+              app.eval("document.body.classList.contains('off')"), True)
+
     # ------------------------------------------------- soft delete, undo, trash
     with App(subscriptions=basic_set()) as app:
         section("soft delete, undo and Recently deleted")
         app.run("setTab('all')")
-        app.page.on("dialog", lambda d: d.accept())
         app.run("openForm('sub-gym'); delItem()")
+        app.ask_ok()
         app.settle(400)
         check("deleted row leaves the list", "Gym" in app.names(), False)
         check("row is soft-deleted, not erased", len(app.db("subscriptions")), 4)
@@ -311,6 +424,7 @@ def run():
         check("undo restores the row", "Gym" in app.names(), True)
 
         app.run("openForm('sub-gym'); delItem()")
+        app.ask_ok()
         app.settle(400)
         app.run("hideUndo(); openTrash()")
         check("trash lists the deleted subscription", "Gym" in app.text("#trashList"), True)
@@ -319,8 +433,10 @@ def run():
         check("restore from trash works", "Gym" in app.names(), True)
 
         app.run("openForm('sub-gym'); delItem()")
+        app.ask_ok()
         app.settle(400)
         app.run("hideUndo(); purgeItem('sub-gym')")
+        app.ask_ok()
         app.settle(400)
         check("delete forever really removes the row", len(app.db("subscriptions")), 3)
 

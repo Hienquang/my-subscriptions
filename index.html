@@ -9,6 +9,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Due">
 <title>Due</title>
+<link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" href="icon-192.png?v=3">
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=3">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -135,6 +136,15 @@
   .msg{font-size:.8rem;margin-top:10px;color:var(--muted);line-height:1.5}
   .msg.err{color:var(--warn)}
 
+  /* ---------- ask sheet (replaces prompt/alert/confirm) ---------- */
+  #askSheet{z-index:25}                       /* sits above the sheet that opened it */
+  .askmsg{font-size:.86rem;color:var(--muted);margin:-6px 0 14px;line-height:1.5}
+  .askbtns{display:flex;gap:10px;margin-top:6px}
+  .askbtns .btn{flex:1}
+  /* destructive confirm matches the outlined .danger button in the edit form,
+     keeping red as an accent rather than a fill (per the design system) */
+  .askbtns .btn.warn{background:none;border:1px solid var(--line-strong);color:var(--warn);font-weight:400}
+
   /* ---------- sheets (bottom overlays) ---------- */
   .overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:flex-end;justify-content:center;z-index:10}
   .overlay.open{display:flex}
@@ -229,7 +239,7 @@
 </div>
 
 <div class="overlay" id="formSheet" data-close="closeForm">
-  <div class="sheet">
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="formTitle">
     <h2 id="formTitle">Add subscription</h2>
     <div class="field"><label>Name *</label><input id="f_name" placeholder="Netflix, iCloud, gym…"></div>
     <div class="field"><label>Planned amount ($) *</label><input id="f_amount" type="number" step="0.01" min="0" inputmode="decimal" placeholder="15.99"></div>
@@ -260,7 +270,7 @@
 </div>
 
 <div class="overlay" id="paySheet" data-close="closePay">
-  <div class="sheet">
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="payTitle">
     <h2 id="payTitle">Mark paid</h2>
     <div class="row2">
       <div class="field"><label>Amount paid ($) *</label><input id="p_amount" type="number" step="0.01" min="0" inputmode="decimal"></div>
@@ -273,11 +283,27 @@
 </div>
 
 <div class="overlay" id="trashSheet" data-close="closeTrash">
-  <div class="sheet">
-    <h2>Recently deleted</h2>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="trashTitle">
+    <h2 id="trashTitle">Recently deleted</h2>
     <div id="trashList"></div>
     <p class="trashnote">Deleted subscriptions stay here (with their payment history) until you restore them or delete them for good. “Delete forever” also erases their payment history.</p>
     <button class="ghost" style="margin-top:8px" data-act="closeTrash">Close</button>
+  </div>
+</div>
+
+<div class="overlay" id="askSheet" data-close="askCancel">
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="askTitle">
+    <h2 id="askTitle"></h2>
+    <p class="askmsg" id="askMsg"></p>
+    <div class="field" id="askField">
+      <label id="askLabel" for="askInput"></label>
+      <input id="askInput" autocomplete="off">
+    </div>
+    <div class="formerr" id="askErr"></div>
+    <div class="askbtns">
+      <button class="btn" id="askOk" data-act="askConfirm">Save</button>
+    </div>
+    <button class="ghost" id="askCancelBtn" style="margin-top:8px" data-act="askCancel">Cancel</button>
   </div>
 </div>
 
@@ -287,8 +313,8 @@
 </div>
 
 <div class="overlay" id="acctSheet" data-close="closeAccts">
-  <div class="sheet">
-    <h2>Bank accounts</h2>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="acctTitle">
+    <h2 id="acctTitle">Bank accounts</h2>
     <div id="acctList"></div>
     <div class="acctadd">
       <input id="newAcct" placeholder="e.g. Chase Visa •1234">
@@ -306,7 +332,7 @@
 "use strict";
 
 /* ================= constants & state ================= */
-const APP_VERSION = "5.9";
+const APP_VERSION = "6.0";
 const SUPABASE_URL = "https://anpvflizwcmyefbxsfpx.supabase.co";
 const SUPABASE_KEY = "sb_publishable_Va_eUdkFSmtD4uKqNIvppw_wlB1eEYJ";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { flowType: "implicit", detectSessionInUrl: true } });
@@ -322,8 +348,22 @@ let tab = "this";
 /* ================= tiny helpers ================= */
 const $ = id => document.getElementById(id);
 const show = (id, on) => { $(id).style.display = on ? "block" : "none"; };
-const openSheet = id => $(id).classList.add("open");
-const closeSheet = id => $(id).classList.remove("open");
+const sheetStack = [];      // innermost sheet last — Escape and the focus trap use this
+const focusStack = [];
+function openSheet(id){
+  focusStack.push(document.activeElement);
+  sheetStack.push(id);
+  $(id).classList.add("open");
+  const first = $(id).querySelector("input:not([type=hidden]):not([disabled]), select, textarea, button");
+  if(first) setTimeout(() => first.focus(), 30);
+}
+function closeSheet(id){
+  $(id).classList.remove("open");
+  const i = sheetStack.lastIndexOf(id);
+  if(i >= 0) sheetStack.splice(i, 1);
+  const back = focusStack.pop();
+  if(back && document.contains(back)) back.focus();
+}
 const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const money = n => { const [i,d] = Number(n).toFixed(2).split("."); return "$" + Number(i).toLocaleString("en-US") + '<span class="dec">.' + d + '</span>'; };
 const moneyText = n => "$" + Number(n).toFixed(2);
@@ -425,13 +465,67 @@ async function sendLink(){
   setMsg(error ? error.message : "Link sent to " + email + ". Open it on this device, then set a new password via “Change password”.", !!error);
 }
 async function changePassword(){
-  const p = prompt("New password (at least 8 characters):");
+  const p = await promptText("Change password", {
+    label: "New password", type: "password", ok: "Save password",
+    validate: v => v.length < 8 ? "Use at least 8 characters." : null
+  });
   if(p === null) return;
-  if(p.length < 8) return alert("Password must be at least 8 characters.");
   const { error } = await sb.auth.updateUser({ password: p });
-  alert(error ? "Could not set password: " + error.message : "Password saved. Use it to sign in on any device.");
+  note(error ? "Could not set password: " + error.message : "Password saved. Use it to sign in on any device.");
 }
 const signOut = () => sb.auth.signOut();
+
+/* ================= ask sheet =================
+   Replaces prompt/alert/confirm, which broke the visual language of the app and
+   are especially jarring in an iOS standalone window. Returns a promise:
+     cancel        -> null
+     confirm-only  -> true
+     with an input -> the entered string
+   `validate` keeps the sheet open and shows the message inline, so a typo doesn't
+   throw away what you typed. */
+let askResolve = null, askOpts = {};
+function ask(opts){
+  askOpts = opts || {};
+  $("askTitle").textContent = askOpts.title || "";
+  $("askMsg").textContent = askOpts.message || "";
+  show("askMsg", !!askOpts.message);
+  show("askField", !!askOpts.input);
+  if(askOpts.input){
+    const el = $("askInput");
+    el.type = askOpts.type || "text";
+    el.value = askOpts.value || "";
+    el.placeholder = askOpts.placeholder || "";
+    $("askLabel").textContent = askOpts.label || "";
+    show("askLabel", !!askOpts.label);
+  }
+  $("askOk").textContent = askOpts.ok || "OK";
+  $("askOk").className = "btn" + (askOpts.danger ? " warn" : "");
+  show("askCancelBtn", askOpts.cancel !== null);
+  $("askCancelBtn").textContent = askOpts.cancel || "Cancel";
+  $("askErr").style.display = "none";
+  openSheet("askSheet");
+  if(askOpts.input) setTimeout(() => { $("askInput").focus(); $("askInput").select(); }, 60);
+  return new Promise(res => { askResolve = res; });
+}
+function askDone(v){
+  closeSheet("askSheet");
+  const r = askResolve; askResolve = null;
+  if(r) r(v);
+}
+function askConfirm(){
+  if(!askOpts.input) return askDone(true);
+  const v = $("askInput").value;
+  const bad = askOpts.validate ? askOpts.validate(v) : null;
+  if(bad){ sheetError("askErr", bad); return; }
+  askDone(v);
+}
+function askCancel(){ askDone(null); }
+
+const note = (message, title) => ask({ title: title || "", message, ok: "OK", cancel: null });
+const confirmAction = (title, message, ok, danger) =>
+  ask({ title, message, ok: ok || "Confirm", danger, cancel: "Cancel" }).then(v => v === true);
+const promptText = (title, opts) =>
+  ask(Object.assign({ title, input: true, ok: "Save" }, opts));
 
 /* ================= data, cache & offline ================= */
 const OFFLINE_MSG = "You're offline — showing saved data. Changes are disabled until you're back online.";
@@ -652,16 +746,20 @@ function openForm(id){
   show("deleteBtn", !!it);
   openSheet("formSheet");
 }
+const nameTaken = (n, exceptId) =>
+  accounts.some(a => a.id !== exceptId && a.name.toLowerCase() === n.trim().toLowerCase());
+
 async function onNewAccountOption(el){
-  const e = { target: el };
   if(el.value !== "__new") return;
-  const n = prompt("New bank account or card name:");
-  if(n && n.trim()){
-    const { data, error } = await sb.from("accounts").insert({ name: n.trim() }).select().single();
-    if(error){ alert("Could not add: " + error.message); e.target.value = ""; return; }
-    accounts.push(data); accounts.sort((x,y) => x.name.localeCompare(y.name));
-    $("f_method").innerHTML = methodOptions(data.id);
-  } else e.target.value = "";
+  const n = await promptText("New account", {
+    label: "Bank account or card name", placeholder: "e.g. Chase Visa •1234", ok: "Add account",
+    validate: v => !v.trim() ? "Enter a name." : nameTaken(v) ? "That account already exists." : null
+  });
+  if(n === null){ el.value = ""; return; }
+  const { data, error } = await sb.from("accounts").insert({ name: n.trim() }).select().single();
+  if(error){ await note("Could not add: " + error.message); el.value = ""; return; }
+  accounts.push(data); accounts.sort((x,y) => x.name.localeCompare(y.name));
+  $("f_method").innerHTML = methodOptions(data.id);
 }
 function closeForm(){ closeSheet("formSheet"); }
 // shared by both sheets — one place that knows how an inline error is shown
@@ -702,10 +800,13 @@ async function saveItem(){
   closeForm(); await load();
 }
 async function delItem(){
-  if(!editingId || !confirm("Delete this subscription? You can restore it any time from “Recently deleted”.")) return;
+  if(!editingId) return;
   const it = items.find(x => x.id === editingId);
+  const ok = await confirmAction("Delete " + (it ? "“" + it.name + "”" : "this subscription") + "?",
+    "You can restore it any time from “Recently deleted”.", "Delete", true);
+  if(!ok) return;
   const { error } = await sb.from("subscriptions").update({ deleted_at: new Date().toISOString() }).eq("id", editingId);
-  if(error) return alert("Delete failed: " + error.message);
+  if(error) return note("Delete failed: " + error.message);
   closeForm(); await load();
   if(it) showUndo(it);
 }
@@ -724,11 +825,11 @@ async function undoDelete(){
   const id = undoItem.id;
   hideUndo();
   const { error } = await sb.from("subscriptions").update({ deleted_at: null }).eq("id", id);
-  if(error) return alert("Could not undo: " + error.message);
+  if(error) return note("Could not undo: " + error.message);
   await load();
 }
 function openTrash(){
-  if(offline) return alert("You're offline — restoring needs a connection.");
+  if(offline) return note("You're offline — restoring needs a connection.");
   renderTrash();
   openSheet("trashSheet");
 }
@@ -747,15 +848,17 @@ function renderTrash(){
 }
 async function restoreItem(id){
   const { error } = await sb.from("subscriptions").update({ deleted_at: null }).eq("id", id);
-  if(error) return alert("Could not restore: " + error.message);
+  if(error) return note("Could not restore: " + error.message);
   await load();
   renderTrash();
 }
 async function purgeItem(id){
   const it = deletedItems.find(x => x.id === id);
-  if(!confirm("Permanently delete “" + (it ? it.name : "this subscription") + "” and its payment history? This cannot be undone.")) return;
+  const ok = await confirmAction("Delete “" + (it ? it.name : "this subscription") + "” forever?",
+    "This also erases its payment history and cannot be undone.", "Delete forever", true);
+  if(!ok) return;
   const { error } = await sb.from("subscriptions").delete().eq("id", id);
-  if(error) return alert("Could not delete: " + error.message);
+  if(error) return note("Could not delete: " + error.message);
   await load();
   renderTrash();
 }
@@ -803,7 +906,7 @@ async function confirmPay(){
 
 /* ================= bank accounts ================= */
 function openAccts(){
-  if(offline) return alert("You're offline — account changes need a connection.");
+  if(offline) return note("You're offline — account changes need a connection.");
   renderAccts();
   openSheet("acctSheet");
 }
@@ -824,9 +927,9 @@ function renderAccts(){
 async function addAcct(){
   const n = $("newAcct").value.trim();
   if(!n) return;
-  if(accounts.some(a => a.name.toLowerCase() === n.toLowerCase())) return alert("That account already exists.");
+  if(nameTaken(n)) return note("That account already exists.");
   const { data, error } = await sb.from("accounts").insert({ name: n }).select().single();
-  if(error) return alert("Could not add: " + error.message);
+  if(error) return note("Could not add: " + error.message);
   accounts.push(data); accounts.sort((x,y) => x.name.localeCompare(y.name));
   $("newAcct").value = "";
   renderAccts();
@@ -834,21 +937,23 @@ async function addAcct(){
 async function renameAcct(id){
   const a = accounts.find(x => x.id === id);
   if(!a) return;
-  const n = prompt("Account name:", a.name);
+  const n = await promptText("Rename account", {
+    label: "Account name", value: a.name,
+    validate: v => !v.trim() ? "Enter a name." : nameTaken(v, id) ? "That name is already used." : null
+  });
   if(n === null) return;
   const name = n.trim();
-  if(!name || name === a.name) return;
-  if(accounts.some(x => x.id !== id && x.name.toLowerCase() === name.toLowerCase())) return alert("That name is already used.");
+  if(name === a.name) return;
   // subscriptions reference the account by id, so this is the only write needed
   const { error } = await sb.from("accounts").update({ name }).eq("id", id);
-  if(error) return alert("Could not rename: " + error.message);
+  if(error) return note("Could not rename: " + error.message);
   a.name = name;
   await load();
   renderAccts();
 }
 async function toggleAcct(id, active){
   const { error } = await sb.from("accounts").update({ active }).eq("id", id);
-  if(error) return alert("Could not update: " + error.message);
+  if(error) return note("Could not update: " + error.message);
   const a = accounts.find(x => x.id === id);
   if(a) a.active = active;
   renderAccts();
@@ -872,6 +977,7 @@ const ACTIONS = {
   renameAcct: el => renameAcct(el.dataset.id),
   toggleAcct: el => toggleAcct(el.dataset.id, el.dataset.on === "true"),
   openTrash, closeTrash,
+  askConfirm, askCancel,
   restoreItem: el => restoreItem(el.dataset.id),
   purgeItem: el => purgeItem(el.dataset.id),
   undoDelete
@@ -900,8 +1006,39 @@ document.addEventListener("input", e => {
   if(el && INPUTS[el.dataset.input]) INPUTS[el.dataset.input](el, e);
 });
 
+// Keyboard: Escape closes the innermost sheet, Enter submits the ask sheet, and Tab
+// stays inside the open sheet instead of wandering into the page behind it.
+const focusablesIn = el => [...el.querySelectorAll('a[href], button:not([disabled]), input:not([type=hidden]):not([disabled]), select:not([disabled]), textarea:not([disabled])')]
+  .filter(x => x.offsetParent !== null);
+
+document.addEventListener("keydown", e => {
+  const top = sheetStack[sheetStack.length - 1];
+  if(!top) return;
+  if(e.key === "Escape"){
+    const close = $(top).dataset.close;
+    if(ACTIONS[close]){ e.preventDefault(); ACTIONS[close](); }
+    return;
+  }
+  if(e.key === "Enter" && top === "askSheet" && e.target.id === "askInput"){
+    e.preventDefault(); askConfirm(); return;
+  }
+  if(e.key === "Tab"){
+    const f = focusablesIn($(top));
+    if(!f.length) return;
+    const first = f[0], last = f[f.length - 1];
+    if(e.shiftKey && document.activeElement === first){ e.preventDefault(); last.focus(); }
+    else if(!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
+  }
+});
+
 /* ================= self-update ================= */
 $("verLabel").textContent = "v" + APP_VERSION;   // the const is the only place the version is written
+
+// Caches the shell so the app opens with no network at all. The worker is
+// network-first for this page, so it can never pin you to an old build online.
+if("serviceWorker" in navigator){
+  window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+}
 
 async function checkForUpdate(){
   try{

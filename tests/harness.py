@@ -155,7 +155,8 @@ class App:
         html = html.replace('<script src="stub.js"></script>', '<script src="stub.js"></script>' + seed)
         open(os.path.join(self.tmp, "index.html"), "w", encoding="utf-8").write(html)
         shutil.copy(os.path.join(TESTS, "stub.js"), self.tmp)
-        for extra in ("manifest.json", "sw.js"):
+        for extra in ("manifest.json", "sw.js", "icon-192.png", "icon-512.png",
+                      "icon-maskable-512.png", "apple-touch-icon.png"):
             src = os.path.join(ROOT, extra)
             if os.path.exists(src):
                 shutil.copy(src, self.tmp)
@@ -213,6 +214,23 @@ class App:
 
     def db(self, table):
         return self.eval("window.__db.%s" % table)
+
+    # -- the in-app ask sheet (replaced prompt/alert/confirm in v6.0) --------
+    def ask_visible(self):
+        return self.eval("$('askSheet').classList.contains('open')")
+
+    def ask_ok(self, value=None):
+        """Answer the open ask sheet: type `value` if it has an input, then confirm."""
+        self.page.wait_for_selector("#askSheet.open", timeout=3000)
+        if value is not None:
+            self.page.fill("#askInput", value)
+        self.page.click("#askOk")
+        self.settle(120)
+
+    def ask_dismiss(self):
+        self.page.wait_for_selector("#askSheet.open", timeout=3000)
+        self.page.click("#askCancelBtn")
+        self.settle(120)
 
     def shot(self, path):
         self.page.screenshot(path=path, full_page=True)
