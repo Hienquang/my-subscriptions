@@ -45,6 +45,7 @@
   .duesoon{font-size:.8rem;color:var(--muted);margin-top:5px;font-style:italic}
   .duesoon.warn{color:var(--accent)}
   .offbar{display:none;background:var(--accent);color:var(--on-accent);font-size:.78rem;padding:9px 14px;border-radius:8px;margin-top:14px;text-align:center}
+  .offbar.err{background:var(--warn)}
   body.off .fab, body.off .addbtn, body.off .paybtn{opacity:.3;pointer-events:none}
 
   /* ---------- view toggle, tabs, filters ---------- */
@@ -200,7 +201,7 @@
     <div class="total serif" id="totMonthly">—</div>
     <div class="duesoon" id="dueLine"></div>
   </div>
-  <div class="offbar" id="offbar">You're offline — showing saved data. Changes are disabled until you're back online.</div>
+  <div class="offbar" id="offbar"></div>
 
   <div class="viewbar">
     <div class="seg">
@@ -221,7 +222,7 @@
     <button class="tbtn" id="trashBtn" onclick="openTrash()">Recently deleted</button>
     <button class="tbtn" onclick="changePassword()">Change password</button>
     <button class="tbtn" onclick="signOut()">Sign out</button>
-    <span class="tbtn" style="cursor:default;opacity:.6">v5.7</span>
+    <span class="tbtn" style="cursor:default;opacity:.6">v5.8</span>
   </div>
 
   <button class="fab" onclick="openForm()" aria-label="Add subscription">+</button>
@@ -305,13 +306,14 @@
 "use strict";
 
 /* ================= constants & state ================= */
-const APP_VERSION = "5.7";
+const APP_VERSION = "5.8";
 const SUPABASE_URL = "https://anpvflizwcmyefbxsfpx.supabase.co";
 const SUPABASE_KEY = "sb_publishable_Va_eUdkFSmtD4uKqNIvppw_wlB1eEYJ";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { flowType: "implicit", detectSessionInUrl: true } });
 
 let items = [], deletedItems = [], accounts = [], lastPay = {};
 let editingId = null, payingId = null, justPaidId = null, offline = false;
+let loadToken = 0;   // only the newest load() may write to state — see load()
 let filter = "all", query = "";
 let undoItem = null, undoTimer = null;
 let view = localStorage.getItem("view") || "week";
@@ -432,10 +434,28 @@ async function changePassword(){
 const signOut = () => sb.auth.signOut();
 
 /* ================= data, cache & offline ================= */
+const OFFLINE_MSG = "You're offline — showing saved data. Changes are disabled until you're back online.";
+function banner(msg, kind){
+  $("offbar").textContent = msg || "";
+  $("offbar").className = "offbar" + (kind ? " " + kind : "");
+  show("offbar", !!msg);
+}
 function setOffline(v){
   offline = v;
   document.body.classList.toggle("off", v);
-  show("offbar", v);
+  banner(v ? OFFLINE_MSG : "", "");
+}
+// A query that comes back with an error is NOT the same as having no network — saying
+// "you're offline" for an expired token or an RLS problem sends you to check the wifi.
+function loadFailed(err){
+  offline = false;
+  document.body.classList.remove("off");
+  const m = String(err.message || err);
+  if(/JWT|token|session/i.test(m)){
+    banner("Your session expired — please sign in again.", "err");
+    return sb.auth.signOut();
+  }
+  banner("Couldn't refresh: " + m + " — showing saved data.", "err");
 }
 function saveCache(){ try{ localStorage.setItem("cache", JSON.stringify({ items, deletedItems, accounts, lastPay })); }catch(e){} }
 function useCache(){
@@ -449,16 +469,19 @@ window.addEventListener("online", () => { setOffline(false); load(); });
 window.addEventListener("offline", () => setOffline(true));
 
 async function load(){
+  const token = ++loadToken;                       // several things can trigger a load at once
+  const stale = () => token !== loadToken;         // a newer one started; drop this result
   if(!navigator.onLine){ setOffline(true); useCache(); return; }
   let s, a, p;
   try{
     [s, a, p] = await Promise.all([
       sb.from("subscriptions").select("*"),
       sb.from("accounts").select("*").order("name"),
-      sb.from("payments").select("subscription_id, amount, paid_on").order("paid_on", { ascending:false }).limit(500)
+      sb.from("last_payments").select("subscription_id, amount, paid_on")
     ]);
-  }catch(e){ setOffline(true); useCache(); return; }
-  if(s.error){ setOffline(true); useCache(); return; }
+  }catch(e){ if(stale()) return; setOffline(true); useCache(); return; }   // no network at all
+  if(stale()) return;
+  if(s.error){ loadFailed(s.error); useCache(); return; }                  // the server answered, unhappily
   setOffline(false);
   const all = s.data || [];
   items = all.filter(i => !i.deleted_at);
@@ -466,7 +489,7 @@ async function load(){
   if(!a.error) accounts = a.data || [];   // on error keep the last known list — never wipe it
   if(!p.error){
     lastPay = {};
-    (p.data || []).forEach(r => { if(!(r.subscription_id in lastPay)) lastPay[r.subscription_id] = r; });
+    (p.data || []).forEach(r => { lastPay[r.subscription_id] = r; });   // the view returns one row per subscription
   }
   saveCache();
   render();
@@ -757,19 +780,22 @@ async function confirmPay(){
   if(amt === "" || isNaN(Number(amt)) || Number(amt) < 0) return err("Enter the amount you actually paid.");
   if(!date) return err("Select the payment date.");
   $("payBtn").disabled = true;
-  const { error: pErr } = await sb.from("payments").insert({ subscription_id: payingId, amount: Number(amt), paid_on: date });
-  if(pErr){ $("payBtn").disabled = false; return err("Could not record payment: " + pErr.message); }
-  let upd;
-  if(cyc(it).unit === "once"){
-    upd = { active: false };
-  } else {
-    let next = addCycle(it.next_due, it);
-    while(next && daysUntil(next) <= 0) next = addCycle(next, it);
-    upd = { next_due: next };
+  const once = cyc(it).unit === "once";
+  let next = null;
+  if(!once){
+    next = addCycle(it.next_due, it);
+    while(next && daysUntil(next) <= 0) next = addCycle(next, it);   // catch up if it's badly overdue
   }
-  const { error } = await sb.from("subscriptions").update(upd).eq("id", payingId);
+  // one transaction: logging the payment and advancing the due date can't half-happen
+  const { error } = await sb.rpc("record_payment", {
+    p_subscription_id: payingId,
+    p_amount: Number(amt),
+    p_paid_on: date,
+    p_next_due: next,
+    p_deactivate: once
+  });
   $("payBtn").disabled = false;
-  if(error) return err("Update failed: " + error.message);
+  if(error) return err("Could not record payment: " + error.message);
   justPaidId = payingId;
   closePay(); await load();
 }
@@ -845,5 +871,5 @@ checkForUpdate();
 init();
 </script>
 </body>
-<!-- v5.7 -->
+<!-- v5.8 -->
 </html>

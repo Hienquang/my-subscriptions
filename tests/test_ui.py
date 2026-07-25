@@ -155,6 +155,75 @@ def run():
         check("an unlinked row falls back to its old text label",
               app.text("#list .item .meta").startswith("Old Bank"), True)
 
+    # ------------------------------------------- v5.8 atomicity and load races
+    with App(subscriptions=[sub("Netflix", 15.99, due_offset=2, due_day=15)]) as app:
+        section("mark paid is a single atomic call (v5.8)")
+        app.run("setTab('all'); openPay('sub-netflix'); confirmPay()")
+        app.settle(400)
+        check("payment goes through record_payment(), not a bare insert",
+              [c.get("rpc") for c in app.calls() if c.get("rpc")], ["record_payment"])
+        check("no direct write to the payments table", app.calls("payments"), [])
+        check("no separate subscriptions update", app.calls("subscriptions", "update"), [])
+        check("the payment landed", len(app.db("payments")), 1)
+        check("the due date advanced", app.db("subscriptions")[0]["next_due"].endswith("-15"), True)
+
+    with App(subscriptions=[sub("Netflix", 15.99, due_offset=2)],
+             errors={"record_payment": {"message": "deadlock detected"}}) as app:
+        section("a failed payment leaves nothing behind")
+        app.run("setTab('all'); openPay('sub-netflix'); confirmPay()")
+        app.settle(400)
+        check("the error is shown in the sheet", "deadlock detected" in app.text("#p_err"), True)
+        check("the pay sheet stays open so it can be retried",
+              app.eval("$('paySheet').classList.contains('open')"), True)
+        check("nothing was written", len(app.db("payments")), 0)
+        check("the due date is untouched", app.db("subscriptions")[0]["next_due"], days_from_today(2))
+
+    old_payments = [{"id": "p-old", "subscription_id": "sub-annual-thing", "amount": 99,
+                     "paid_on": days_from_today(-400), "created_at": "2025-06-01T00:00:00Z"}]
+    old_payments += [{"id": "p-%d" % i, "subscription_id": "sub-netflix", "amount": 15.99,
+                      "paid_on": days_from_today(-i), "created_at": "2026-01-01T00:00:00Z"}
+                     for i in range(1, 30)]
+    with App(subscriptions=[sub("Annual thing", 99, unit="month", count=12), sub("Netflix", 15.99)],
+             payments=old_payments) as app:
+        section("last payment survives a long payment history (v5.8)")
+        app.run("setTab('all'); openForm('sub-annual-thing')")
+        check("an old payment is still found via the last_payments view",
+              "Last paid: $99.00" in app.text("#f_lastpaid"), True)
+        check("the query asks for no row limit",
+              [c for c in app.calls("last_payments") if c.get("limitN")], [])
+
+    with App(subscriptions=basic_set()) as app:
+        section("concurrent loads can't clobber each other (v5.8)")
+        app.run("setTab('all')")
+        app.run("window.__delays.subscriptions = 900; load()")
+        app.settle(50)
+        app.run("window.__delays.subscriptions = 0;"
+                "window.__db.subscriptions.push(Object.assign({}, window.__db.subscriptions[0],"
+                "  {id: 'sub-new', name: 'Just Added'}));"
+                "load()")
+        app.settle(250)
+        check("the newer load lands first", "Just Added" in app.names(), True)
+        app.settle(1200)
+        check("the older, slower response is discarded", "Just Added" in app.names(), True)
+        check("the list is not rewound to the stale snapshot", len(app.names()), 5)
+
+    with App(subscriptions=basic_set(), errors={"subscriptions": {"message": "permission denied for table"}}) as app:
+        section("a query error is not reported as being offline (v5.8)")
+        app.run("load()")
+        app.settle(300)
+        check("the real reason is shown", "permission denied" in app.text("#offbar"), True)
+        check("it is styled as an error, not as the offline banner",
+              app.eval("$('offbar').classList.contains('err')"), True)
+        check("buttons are not disabled as if offline",
+              app.eval("document.body.classList.contains('off')"), False)
+
+    with App(subscriptions=basic_set()) as app:
+        section("an expired session sends you back to sign-in (v5.8)")
+        app.run("window.__errors.subscriptions = { message: 'JWT expired' }; load()")
+        app.settle(500)
+        check("the message says so", "session expired" in app.text("#offbar"), True)
+        check("the app signs out", app.eval("getComputedStyle($('authView')).display != 'none'"), True)
+
     # ------------------------------------------------- soft delete, undo, trash
     with App(subscriptions=basic_set()) as app:
         section("soft delete, undo and Recently deleted")

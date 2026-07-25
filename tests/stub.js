@@ -39,16 +39,21 @@
 
   async function exec(s) {
     window.__calls.push({ table: s.table, op: s.op, filters: clone(s.filters), payload: clone(s.payload) });
-    await wait(window.__delays[s.table]);
 
     const err = window.__errors[s.table];
-    if (err) return { data: null, error: err };
+    if (err) { await wait(window.__delays[s.table]); return { data: null, error: err }; }
 
     const rows = table(s.table);
     let out;
 
     if (s.op === "select") {
       out = rows.filter(r => matches(r, s.filters));
+      if (s.table === "last_payments") {
+        const seen = new Set();
+        out = table("payments").slice()
+          .sort((x, y) => (x.paid_on < y.paid_on ? 1 : x.paid_on > y.paid_on ? -1 : 0))
+          .filter(r => (seen.has(r.subscription_id) ? false : seen.add(r.subscription_id)));
+      }
       if (s.orderBy) {
         out = out.slice().sort((a, b) => {
           const x = a[s.orderBy], y = b[s.orderBy];
@@ -75,6 +80,10 @@
       out = clone(gone);
     }
 
+    // the query is evaluated now and *delivered* after the delay, so a slow earlier
+    // request carries an older snapshot — the exact race load() guards against
+    await wait(window.__delays[s.table]);
+
     if (s.wantSingle) {
       if (!out.length) return { data: null, error: { message: "No rows found" } };
       return { data: out[0], error: null };
@@ -98,6 +107,19 @@
       then(onOk, onErr) { return exec(s).then(onOk, onErr); }
     };
     return b;
+  }
+
+  // Mirrors the record_payment() Postgres function so tests exercise the same contract.
+  if (!window.__rpc.record_payment) {
+    window.__rpc.record_payment = function (a) {
+      const subs = table("subscriptions");
+      const s = subs.find(r => r.id === a.p_subscription_id);
+      if (!s) throw new Error("Subscription " + a.p_subscription_id + " not found");
+      table("payments").push({ id: uid(), user_id: "test-user", subscription_id: a.p_subscription_id,
+                               amount: a.p_amount, paid_on: a.p_paid_on, created_at: new Date().toISOString() });
+      if (a.p_deactivate) s.active = false; else s.next_due = a.p_next_due;
+      return clone(s);
+    };
   }
 
   const authListeners = [];
