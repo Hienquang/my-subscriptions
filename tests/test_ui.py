@@ -43,8 +43,11 @@ def run():
               sorted(app.names()), ["Netflix", "iCloud"])
         app.run("setTab('all')")
         check("All tab shows every subscription", len(app.names()), 4)
-        app.run("setFilter('Chase Visa')")
+        app.run("setFilter('acct-chase-visa')")
         check("account chip filters the list", app.names(), ["Netflix", "Gym"])
+        check("chips are built from the accounts table",
+              app.page.eval_on_selector_all(".chip", "els => els.map(e => e.textContent)"),
+              ["All accounts", "Amex Gold", "Chase Visa"])
         app.run("setFilter('all')")
 
         section("search")
@@ -53,7 +56,7 @@ def run():
         check("search matches by name", app.names(), ["Gym"])
         app.run("setQuery('amex')")
         check("search matches by account", sorted(app.names()), ["Old Magazine", "iCloud"])
-        app.run("setFilter('Chase Visa')")
+        app.run("setFilter('acct-chase-visa')")
         check("an active search ignores the account chips", sorted(app.names()), ["Old Magazine", "iCloud"])
         app.run("setFilter('all'); setQuery('nothingmatches')")
         check("empty state for a bad search", "No matches" in app.text("#list .empty"), True)
@@ -104,10 +107,10 @@ def run():
         app.settle(1800)
         check("dropdown fills itself once accounts arrive",
               app.eval("$('f_method').options.length"), len(DEFAULT_ACCOUNTS) + 2)
-        app.run("$('f_method').value = 'Amex Gold'")
+        app.run("$('f_method').value = 'acct-amex-gold'")
         app.run("load()")
         app.settle(1800)
-        check("a refresh mid-edit preserves the chosen account", app.eval("$('f_method').value"), "Amex Gold")
+        check("a refresh mid-edit preserves the chosen account", app.eval("$('f_method').value"), "acct-amex-gold")
 
     with App(subscriptions=basic_set(), errors={"accounts": {"message": "boom"}}) as app:
         section("regression v5.4 — a failed accounts query must not wipe the list")
@@ -117,8 +120,40 @@ def run():
         check("subscriptions still render despite the earlier account error", len(app.names()), 4)
         check("accounts recover on the next successful load",
               app.eval("accounts.map(a => a.name)"), ["Recovered"])
-        check("no duplicate accounts were seeded",
+        check("no accounts are auto-inserted on load",
               [c for c in app.calls("accounts", "insert")], [])
+
+    # ------------------------------------------------- v5.7 account_id linkage
+    with App(subscriptions=basic_set()) as app:
+        section("accounts are referenced by id (v5.7)")
+        app.run("setTab('all')")
+        app.page.on("dialog", lambda d: d.accept())
+        app.run("openForm('sub-netflix')")
+        check("the form preselects the linked account by id",
+              app.eval("$('f_method').value"), "acct-chase-visa")
+        app.run("closeForm()")
+
+        before = len(app.calls("subscriptions", "update"))
+        app.run("window.prompt = () => 'Chase Sapphire'; renameAcct('acct-chase-visa')")
+        app.settle(500)
+        check("renaming writes to accounts only, never to subscriptions",
+              len(app.calls("subscriptions", "update")), before)
+        check("the new name shows on the subscription row",
+              "Chase Sapphire" in app.text("#list .item:nth-child(2) .meta"), True)
+        check("the chip picks up the new name too",
+              "Chase Sapphire" in app.text("#chips"), True)
+        check("the subscription row itself was untouched",
+              app.db("subscriptions")[0]["account_id"], "acct-chase-visa")
+
+        app.run("setFilter('acct-chase-visa')")
+        check("filtering survives a rename (it keys on the id)", app.names(), ["Netflix", "Gym"])
+        app.run("setFilter('all')")
+
+    with App(subscriptions=[sub("Legacy row", 5, method=None, payment_method="Old Bank", account_id=None)]) as app:
+        section("pre-v5.7 rows without account_id")
+        app.run("setTab('all')")
+        check("an unlinked row falls back to its old text label",
+              app.text("#list .item .meta").startswith("Old Bank"), True)
 
     # ------------------------------------------------- soft delete, undo, trash
     with App(subscriptions=basic_set()) as app:

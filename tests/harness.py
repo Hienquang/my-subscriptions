@@ -65,6 +65,8 @@ def days_from_today(n):
 
 # ---------------------------------------------------------------- seed data
 def sub(name, amount, due_offset=3, unit="month", count=1, method="Chase Visa", **extra):
+    # `method` names an account; the row carries both the v5.7 account_id link and the
+    # deprecated payment_method text, mirroring migrated production data.
     row = {
         "id": extra.pop("id", "sub-" + re.sub(r"\W+", "-", name.lower())),
         "user_id": "test-user",
@@ -75,6 +77,7 @@ def sub(name, amount, due_offset=3, unit="month", count=1, method="Chase Visa", 
         "cycle_unit": unit,
         "cycle_count": None if unit == "once" else count,
         "next_due": None if due_offset is None else days_from_today(due_offset),
+        "account_id": None if method is None else "acct-" + re.sub(r"\W+", "-", method.lower()),
         "payment_method": method,
         "notes": None,
         "active": True,

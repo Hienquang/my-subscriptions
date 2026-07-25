@@ -221,7 +221,7 @@
     <button class="tbtn" id="trashBtn" onclick="openTrash()">Recently deleted</button>
     <button class="tbtn" onclick="changePassword()">Change password</button>
     <button class="tbtn" onclick="signOut()">Sign out</button>
-    <span class="tbtn" style="cursor:default;opacity:.6">v5.6</span>
+    <span class="tbtn" style="cursor:default;opacity:.6">v5.7</span>
   </div>
 
   <button class="fab" onclick="openForm()" aria-label="Add subscription">+</button>
@@ -305,7 +305,7 @@
 "use strict";
 
 /* ================= constants & state ================= */
-const APP_VERSION = "5.6";
+const APP_VERSION = "5.7";
 const SUPABASE_URL = "https://anpvflizwcmyefbxsfpx.supabase.co";
 const SUPABASE_KEY = "sb_publishable_Va_eUdkFSmtD4uKqNIvppw_wlB1eEYJ";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { flowType: "implicit", detectSessionInUrl: true } });
@@ -329,6 +329,15 @@ const today = () => { const d = new Date(); return new Date(d.getFullYear(), d.g
 const iso = d => d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
 const prettyDate = s => new Date(s+"T00:00:00").toLocaleDateString(undefined, { day:"numeric", month:"short" });
 const daysUntil = s => s == null ? null : Math.round((new Date(s+"T00:00:00") - today()) / 86400000);
+
+/* ================= accounts ================= */
+const acctById = id => accounts.find(a => a.id === id);
+// Subscriptions link to accounts by id. payment_method is the pre-v5.7 text copy of
+// the name, still read as a fallback so a stale cache renders sensibly.
+function acctName(it){
+  const a = it.account_id ? acctById(it.account_id) : null;
+  return a ? a.name : (it.payment_method || "");
+}
 
 /* ================= billing cycles ================= */
 const LEGACY_CYCLES = { weekly:["week",1], biweekly:["week",2], fourweekly:["week",4], monthly:["month",1], quarterly:["month",3], yearly:["month",12], once:["once",null] };
@@ -454,7 +463,7 @@ async function load(){
   const all = s.data || [];
   items = all.filter(i => !i.deleted_at);
   deletedItems = all.filter(i => i.deleted_at).sort((x,y) => x.deleted_at < y.deleted_at ? 1 : -1);
-  if(!a.error){ accounts = a.data || []; await seedAccounts(); }   // on error keep the last known list — never wipe it
+  if(!a.error) accounts = a.data || [];   // on error keep the last known list — never wipe it
   if(!p.error){
     lastPay = {};
     (p.data || []).forEach(r => { if(!(r.subscription_id in lastPay)) lastPay[r.subscription_id] = r; });
@@ -463,14 +472,6 @@ async function load(){
   render();
   refreshMethodSelect();   // the add/edit form may be open with a stale (empty) account dropdown
 }
-async function seedAccounts(){
-  if(accounts.length) return;
-  const names = [...new Set(items.map(i => i.payment_method).filter(Boolean))];
-  if(!names.length) return;
-  const { data, error } = await sb.from("accounts").insert(names.map(n => ({ name:n }))).select();
-  if(!error && data) accounts = data.sort((x,y) => x.name.localeCompare(y.name));
-}
-
 /* ================= render ================= */
 function render(){
   renderHero();
@@ -504,17 +505,19 @@ function renderControls(){
   + '<button class="tab' + (tab==="next" ? " on" : "") + '" onclick="setTab(\'next\')">Next ' + unit + '</button>'
   + '<button class="tab' + (tab==="all" ? " on" : "") + '" onclick="setTab(\'all\')">All</button>';
 
-  const methods = [...new Set(items.map(i => i.payment_method).filter(Boolean))].sort();
-  $("chips").innerHTML = methods.length
-    ? ['<button class="chip' + (filter==="all" ? " on" : "") + '" onclick="setFilter(&quot;all&quot;)">All accounts</button>']
-      .concat(methods.map(m => '<button class="chip' + (filter===m ? " on" : "") + '" data-m="' + esc(m) + '" onclick="setFilter(this.dataset.m)">' + esc(m) + '</button>'))
+  const used = [...new Set(items.map(i => i.account_id).filter(Boolean))]
+    .map(acctById).filter(Boolean)
+    .sort((x,y) => x.name.localeCompare(y.name));
+  $("chips").innerHTML = used.length
+    ? ['<button class="chip' + (filter==="all" ? " on" : "") + '" data-m="all" onclick="setFilter(this.dataset.m)">All accounts</button>']
+      .concat(used.map(a => '<button class="chip' + (filter===a.id ? " on" : "") + '" data-m="' + a.id + '" onclick="setFilter(this.dataset.m)">' + esc(a.name) + '</button>'))
       .join("")
     : "";
 }
 function matchesQuery(i){
   const q = query.trim().toLowerCase();
   if(!q) return true;
-  return [i.name, i.notes, i.payment_method, cycleLabel(i)].some(f => f && String(f).toLowerCase().includes(q));
+  return [i.name, i.notes, acctName(i), cycleLabel(i)].some(f => f && String(f).toLowerCase().includes(q));
 }
 function visibleItems(){
   const { thisEnd, nextEnd } = periodEnds();
@@ -527,7 +530,7 @@ function visibleItems(){
     });
   }
   return items
-    .filter(i => filter === "all" || i.payment_method === filter)
+    .filter(i => filter === "all" || i.account_id === filter)
     .filter(i => {
       if(tab === "all") return true;
       if(!i.active || !i.next_due) return false;
@@ -566,7 +569,7 @@ function renderList(){
     return '<div class="item' + (it.active ? "" : " inactive") + (it.id === glowId ? " ember" : "") + '">'
       + '<div class="info" onclick="openForm(&quot;' + it.id + '&quot;)">'
       +   '<div class="name">' + esc(it.name) + '</div>'
-      +   '<div class="meta">' + esc(it.payment_method || "no account set") + ' · ' + cycleLabel(it) + (it.notes ? ' · ' + esc(it.notes) : '') + '</div>'
+      +   '<div class="meta">' + esc(acctName(it) || "no account set") + ' · ' + cycleLabel(it) + (it.notes ? ' · ' + esc(it.notes) : '') + '</div>'
       + '</div>'
       + '<div class="right">'
       +   (it.amount ? '<div class="amt">' + money(it.amount) + '</div>' : '')
@@ -587,14 +590,15 @@ function setTab(t){
 }
 
 /* ================= subscription form ================= */
-function methodOptions(current){
+function methodOptions(currentId){
   const opts = ['<option value="">Select an account…</option>'];
   accounts.forEach(a => {
-    if(a.active || a.name === current)
-      opts.push('<option value="' + esc(a.name) + '"' + (a.name === current ? " selected" : "") + '>' + esc(a.name) + (a.active ? "" : " (inactive)") + '</option>');
+    if(a.active || a.id === currentId)
+      opts.push('<option value="' + a.id + '"' + (a.id === currentId ? " selected" : "") + '>' + esc(a.name) + (a.active ? "" : " (inactive)") + '</option>');
   });
-  if(current && !accounts.some(a => a.name === current))
-    opts.push('<option value="' + esc(current) + '" selected>' + esc(current) + '</option>');
+  // the linked account hasn't loaded yet — keep the selection rather than silently dropping it
+  if(currentId && !acctById(currentId))
+    opts.push('<option value="' + esc(currentId) + '" selected>…</option>');
   opts.push('<option value="__new">+ New account…</option>');
   return opts.join("");
 }
@@ -616,7 +620,7 @@ function openForm(id){
   $("f_cycn").value = c.n;
   $("cycNwrap").style.visibility = c.unit === "once" ? "hidden" : "visible";
   $("f_due").value = it?.next_due || "";
-  $("f_method").innerHTML = methodOptions(it?.payment_method || "");
+  $("f_method").innerHTML = methodOptions(it?.account_id || "");
   $("f_method").onchange = onNewAccountOption;
   if(!accounts.length && navigator.onLine) load();   // dropdown opened empty — fetch accounts; refreshMethodSelect fills it in
   $("f_notes").value = it?.notes || "";
@@ -635,7 +639,7 @@ async function onNewAccountOption(e){
     const { data, error } = await sb.from("accounts").insert({ name: n.trim() }).select().single();
     if(error){ alert("Could not add: " + error.message); e.target.value = ""; return; }
     accounts.push(data); accounts.sort((x,y) => x.name.localeCompare(y.name));
-    $("f_method").innerHTML = methodOptions(data.name);
+    $("f_method").innerHTML = methodOptions(data.id);
   } else e.target.value = "";
 }
 function closeForm(){ closeSheet("formSheet"); }
@@ -646,12 +650,12 @@ async function saveItem(){
   const unit = $("f_cycu").value;
   const n = parseInt($("f_cycn").value, 10);
   const due = $("f_due").value;
-  const method = $("f_method").value;
+  const accountId = $("f_method").value;
   if(!name) return formError("Name is required.");
   if(amount === "" || isNaN(Number(amount)) || Number(amount) < 0) return formError("Planned amount is required.");
   if(unit !== "once" && (!n || n < 1)) return formError("Enter how often it repeats (1 or more).");
   if(!due) return formError("Next bill due date is required.");
-  if(!method || method === "__new") return formError("Select the account it's paid with.");
+  if(!accountId || accountId === "__new") return formError("Select the account it's paid with.");
   $("saveBtn").disabled = true;
   const rec = {
     name,
@@ -661,7 +665,7 @@ async function saveItem(){
     cycle_count: unit === "once" ? null : n,
     next_due: due,
     due_day: Number(due.slice(8, 10)),   // month-cycle anchor — see addCycle()
-    payment_method: method,
+    account_id: accountId,
     notes: $("f_notes").value.trim() || null,
     active: $("f_active").checked
   };
@@ -808,12 +812,10 @@ async function renameAcct(id){
   const name = n.trim();
   if(!name || name === a.name) return;
   if(accounts.some(x => x.id !== id && x.name.toLowerCase() === name.toLowerCase())) return alert("That name is already used.");
-  const old = a.name;
+  // subscriptions reference the account by id, so this is the only write needed
   const { error } = await sb.from("accounts").update({ name }).eq("id", id);
   if(error) return alert("Could not rename: " + error.message);
-  const { error: e2 } = await sb.from("subscriptions").update({ payment_method: name }).eq("payment_method", old);
-  if(e2) alert("Renamed the account, but updating subscriptions failed: " + e2.message);
-  if(filter === old) filter = name;
+  a.name = name;
   await load();
   renderAccts();
 }
@@ -843,5 +845,5 @@ checkForUpdate();
 init();
 </script>
 </body>
-<!-- v5.6 -->
+<!-- v5.7 -->
 </html>
