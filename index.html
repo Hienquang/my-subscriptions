@@ -221,7 +221,7 @@
     <button class="tbtn" id="trashBtn" onclick="openTrash()">Recently deleted</button>
     <button class="tbtn" onclick="changePassword()">Change password</button>
     <button class="tbtn" onclick="signOut()">Sign out</button>
-    <span class="tbtn" style="cursor:default;opacity:.6">v5.5</span>
+    <span class="tbtn" style="cursor:default;opacity:.6">v5.6</span>
   </div>
 
   <button class="fab" onclick="openForm()" aria-label="Add subscription">+</button>
@@ -305,7 +305,7 @@
 "use strict";
 
 /* ================= constants & state ================= */
-const APP_VERSION = "5.5";
+const APP_VERSION = "5.6";
 const SUPABASE_URL = "https://anpvflizwcmyefbxsfpx.supabase.co";
 const SUPABASE_KEY = "sb_publishable_Va_eUdkFSmtD4uKqNIvppw_wlB1eEYJ";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { flowType: "implicit", detectSessionInUrl: true } });
@@ -344,12 +344,18 @@ function monthlyEquiv(it){
   if(unit === "month") return a / n;
   return 0;
 }
+const lastDayOf = (y, m) => new Date(y, m + 1, 0).getDate();   // day 0 of the next month
 function addCycle(dateStr, it){
   const { unit, n } = cyc(it);
   if(unit === "once") return null;
   const d = new Date(dateStr + "T00:00:00");
-  if(unit === "week") d.setDate(d.getDate() + 7*n); else d.setMonth(d.getMonth() + n);
-  return iso(d);
+  if(unit === "week"){ d.setDate(d.getDate() + 7*n); return iso(d); }
+  // Months: setMonth() overflows (Jan 31 + 1mo => Mar 3), so clamp to the last day of
+  // the target month instead. due_day remembers the day the user actually picked, so a
+  // 31st bill lands on Feb 28 and then returns to Mar 31 rather than sticking at the 28th.
+  const anchor = it.due_day || d.getDate();
+  const y = d.getFullYear(), m = d.getMonth() + n;
+  return iso(new Date(y, m, Math.min(anchor, lastDayOf(y, m))));
 }
 function cycleLabel(it){
   const { unit, n } = cyc(it);
@@ -654,6 +660,7 @@ async function saveItem(){
     cycle_unit: unit,
     cycle_count: unit === "once" ? null : n,
     next_due: due,
+    due_day: Number(due.slice(8, 10)),   // month-cycle anchor — see addCycle()
     payment_method: method,
     notes: $("f_notes").value.trim() || null,
     active: $("f_active").checked
@@ -836,5 +843,5 @@ checkForUpdate();
 init();
 </script>
 </body>
-<!-- v5.5 -->
+<!-- v5.6 -->
 </html>
