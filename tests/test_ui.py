@@ -224,6 +224,78 @@ def run():
         check("the message says so", "session expired" in app.text("#offbar"), True)
         check("the app signs out", app.eval("getComputedStyle($('authView')).display != 'none'"), True)
 
+    # ------------------------------------- v5.9 delegated events (real clicks)
+    with App(subscriptions=basic_set()) as app:
+        section("everything is reachable by clicking (v5.9)")
+        check("version label is rendered from APP_VERSION", app.text("#verLabel"), "v5.9")
+        check("the version appears exactly once, from the const",
+              app.eval("document.body.innerHTML.split('v' + APP_VERSION).length - 1"), 1)
+
+        app.page.click(".fab")
+        check("the + button opens the add form",
+              app.eval("$('formSheet').classList.contains('open')"), True)
+        check("it opens blank", app.eval("$('f_name').value"), "")
+        app.page.click("#formSheet .ghost")
+        check("Cancel closes it", app.eval("$('formSheet').classList.contains('open')"), False)
+
+        app.page.click("#tabs button:nth-child(3)")
+        check("clicking the All tab switches to it", app.eval("tab"), "all")
+        check("and the list follows", len(app.names()), 4)
+
+        app.page.click(".chip:nth-child(3)")
+        check("clicking an account chip filters", app.eval("filter"), "acct-chase-visa")
+        check("the filtered list is right", app.names(), ["Netflix", "Gym"])
+        app.page.click(".chip:nth-child(1)")
+        check("clicking All accounts clears it", app.eval("filter"), "all")
+
+        app.page.click("#list .item:first-child .info")
+        check("clicking a row opens it for editing",
+              app.eval("$('formSheet').classList.contains('open')"), True)
+        check("with that row's data loaded", app.eval("$('f_name').value"), "iCloud")
+        app.page.click("#formSheet .sheet h2")
+        check("clicking inside the sheet does not close it",
+              app.eval("$('formSheet').classList.contains('open')"), True)
+        app.page.mouse.click(5, 5)
+        check("clicking the backdrop does close it",
+              app.eval("$('formSheet').classList.contains('open')"), False)
+
+        app.page.click("#list .item:first-child .paybtn")
+        check("the round ✓ opens the mark-paid sheet",
+              app.eval("$('paySheet').classList.contains('open')"), True)
+        check("for the right subscription", app.eval("payingId"), "sub-icloud")
+        app.page.click("#paySheet .ghost")
+
+        app.page.fill("#q", "gym")
+        app.settle(100)
+        check("typing in the search box filters", app.names(), ["Gym"])
+        app.page.click(".qclear")
+        check("the ✕ clears it", app.eval("$('q').value"), "")
+        check("and the full list is back", len(app.names()), 4)
+
+        app.page.click("#trashBtn")
+        check("the footer opens Recently deleted",
+              app.eval("$('trashSheet').classList.contains('open')"), True)
+        app.page.click("#trashSheet .ghost")
+
+        app.page.click("[data-act='openAccts']")
+        check("the footer opens Bank accounts",
+              app.eval("$('acctSheet').classList.contains('open')"), True)
+        app.page.check("#showInactive")
+        check("the inactive checkbox re-renders the account list",
+              "Schwab Checking" in app.text("#acctList"), True)
+        app.page.click("#acctSheet .ghost")
+
+        app.page.click(".fab")
+        app.page.select_option("#f_cycu", "once")
+        check("choosing a one-time bill hides the repeat count",
+              app.eval("$('cycNwrap').style.visibility"), "hidden")
+        app.page.select_option("#f_cycu", "month")
+        check("and choosing a repeating one shows it again",
+              app.eval("$('cycNwrap').style.visibility"), "visible")
+        app.page.click("#formSheet .ghost")
+
+        check("still no uncaught errors after all that", app.errors_seen, [])
+
     # ------------------------------------------------- soft delete, undo, trash
     with App(subscriptions=basic_set()) as app:
         section("soft delete, undo and Recently deleted")

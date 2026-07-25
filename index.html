@@ -185,16 +185,16 @@
   <p>Sign in to see your subscriptions on any device.</p>
   <input id="email" type="email" placeholder="you@email.com" autocomplete="email">
   <input id="password" type="password" placeholder="Password" autocomplete="current-password">
-  <button class="btn" id="signInBtn" onclick="signIn()">Sign in</button>
-  <button class="ghost" onclick="signUpNew()">New here? Create an account</button>
-  <button class="ghost" onclick="sendLink()">Forgot password? Email me a sign-in link</button>
+  <button class="btn" id="signInBtn" data-act="signIn">Sign in</button>
+  <button class="ghost" data-act="signUp">New here? Create an account</button>
+  <button class="ghost" data-act="sendLink">Forgot password? Email me a sign-in link</button>
   <div id="authMsg" class="msg"></div>
 </div>
 
 <div id="appView" class="wrap" style="display:none">
   <header>
     <h1>Due</h1>
-    <button class="addbtn" onclick="openForm()">+ Add</button>
+    <button class="addbtn" data-act="addSub">+ Add</button>
   </header>
 
   <div class="hero">
@@ -205,30 +205,30 @@
 
   <div class="viewbar">
     <div class="seg">
-      <button id="segWeek" onclick="setView('week')">Week</button>
-      <button id="segMonth" onclick="setView('month')">Month</button>
+      <button id="segWeek" data-act="setView" data-view="week">Week</button>
+      <button id="segMonth" data-act="setView" data-view="month">Month</button>
     </div>
   </div>
   <div class="tabs" id="tabs"></div>
   <div class="searchwrap" id="searchWrap">
-    <input id="q" type="search" placeholder="Search subscriptions…" autocomplete="off" oninput="setQuery(this.value)">
-    <button class="qclear" aria-label="Clear search" onclick="clearQuery()">✕</button>
+    <input id="q" type="search" placeholder="Search subscriptions…" autocomplete="off" data-input="search">
+    <button class="qclear" aria-label="Clear search" data-act="clearQuery">✕</button>
   </div>
   <div class="chips" id="chips"></div>
   <div id="list"></div>
 
   <div class="foot">
-    <button class="tbtn" onclick="openAccts()">Bank accounts</button>
-    <button class="tbtn" id="trashBtn" onclick="openTrash()">Recently deleted</button>
-    <button class="tbtn" onclick="changePassword()">Change password</button>
-    <button class="tbtn" onclick="signOut()">Sign out</button>
-    <span class="tbtn" style="cursor:default;opacity:.6">v5.8</span>
+    <button class="tbtn" data-act="openAccts">Bank accounts</button>
+    <button class="tbtn" id="trashBtn" data-act="openTrash">Recently deleted</button>
+    <button class="tbtn" data-act="changePassword">Change password</button>
+    <button class="tbtn" data-act="signOut">Sign out</button>
+    <span class="tbtn" id="verLabel" style="cursor:default;opacity:.6"></span>
   </div>
 
-  <button class="fab" onclick="openForm()" aria-label="Add subscription">+</button>
+  <button class="fab" data-act="addSub" aria-label="Add subscription">+</button>
 </div>
 
-<div class="overlay" id="formSheet" onclick="if(event.target===this)closeForm()">
+<div class="overlay" id="formSheet" data-close="closeForm">
   <div class="sheet">
     <h2 id="formTitle">Add subscription</h2>
     <div class="field"><label>Name *</label><input id="f_name" placeholder="Netflix, iCloud, gym…"></div>
@@ -236,7 +236,7 @@
     <div class="row2">
       <div class="field" id="cycNwrap"><label>Repeats every *</label><input id="f_cycn" type="number" min="1" step="1" value="1" inputmode="numeric"></div>
       <div class="field"><label>&#8203;</label>
-        <select id="f_cycu" onchange="document.getElementById('cycNwrap').style.visibility = this.value==='once' ? 'hidden' : 'visible'">
+        <select id="f_cycu" data-change="cycleUnit">
           <option value="week">week(s)</option>
           <option value="month" selected>month(s)</option>
           <option value="once">one-time bill</option>
@@ -245,21 +245,21 @@
     </div>
     <div class="row2">
       <div class="field"><label>Next bill due *</label><input id="f_due" type="date"></div>
-      <div class="field"><label>Paid with *</label><select id="f_method"></select></div>
+      <div class="field"><label>Paid with *</label><select id="f_method" data-change="pickAccount"></select></div>
     </div>
     <div class="field"><label>Notes</label><textarea id="f_notes" rows="2" placeholder="Optional — shared with family, cancel before trial ends…"></textarea></div>
     <div class="lastpaid" id="f_lastpaid" style="display:none"></div>
     <div class="check"><input type="checkbox" id="f_active" checked><label for="f_active" style="margin:0;font-size:.85rem;color:var(--text)">Active</label></div>
     <div class="formerr" id="f_err"></div>
     <div class="actions">
-      <button class="danger" id="deleteBtn" style="display:none" onclick="delItem()">Delete</button>
-      <button class="btn" id="saveBtn" onclick="saveItem()">Save</button>
+      <button class="danger" id="deleteBtn" style="display:none" data-act="delItem">Delete</button>
+      <button class="btn" id="saveBtn" data-act="saveItem">Save</button>
     </div>
-    <button class="ghost" style="margin-top:8px" onclick="closeForm()">Cancel</button>
+    <button class="ghost" style="margin-top:8px" data-act="closeForm">Cancel</button>
   </div>
 </div>
 
-<div class="overlay" id="paySheet" onclick="if(event.target===this)closePay()">
+<div class="overlay" id="paySheet" data-close="closePay">
   <div class="sheet">
     <h2 id="payTitle">Mark paid</h2>
     <div class="row2">
@@ -267,38 +267,38 @@
       <div class="field"><label>Payment date *</label><input id="p_date" type="date"></div>
     </div>
     <div class="formerr" id="p_err"></div>
-    <button class="btn" id="payBtn" onclick="confirmPay()">Record payment</button>
-    <button class="ghost" style="margin-top:8px" onclick="closePay()">Cancel</button>
+    <button class="btn" id="payBtn" data-act="confirmPay">Record payment</button>
+    <button class="ghost" style="margin-top:8px" data-act="closePay">Cancel</button>
   </div>
 </div>
 
-<div class="overlay" id="trashSheet" onclick="if(event.target===this)closeTrash()">
+<div class="overlay" id="trashSheet" data-close="closeTrash">
   <div class="sheet">
     <h2>Recently deleted</h2>
     <div id="trashList"></div>
     <p class="trashnote">Deleted subscriptions stay here (with their payment history) until you restore them or delete them for good. “Delete forever” also erases their payment history.</p>
-    <button class="ghost" style="margin-top:8px" onclick="closeTrash()">Close</button>
+    <button class="ghost" style="margin-top:8px" data-act="closeTrash">Close</button>
   </div>
 </div>
 
 <div class="undobar" id="undoBar">
   <span class="txt">Deleted <b id="undoName"></b></span>
-  <button onclick="undoDelete()">Undo</button>
+  <button data-act="undoDelete">Undo</button>
 </div>
 
-<div class="overlay" id="acctSheet" onclick="if(event.target===this)closeAccts()">
+<div class="overlay" id="acctSheet" data-close="closeAccts">
   <div class="sheet">
     <h2>Bank accounts</h2>
     <div id="acctList"></div>
     <div class="acctadd">
       <input id="newAcct" placeholder="e.g. Chase Visa •1234">
-      <button onclick="addAcct()">Add</button>
+      <button data-act="addAcct">Add</button>
     </div>
     <div class="check" style="margin-top:10px">
-      <input type="checkbox" id="showInactive" onchange="renderAccts()">
+      <input type="checkbox" id="showInactive" data-change="showInactive">
       <label for="showInactive" style="margin:0;font-size:.85rem;color:var(--muted)">Show inactive accounts</label>
     </div>
-    <button class="ghost" style="margin-top:8px" onclick="closeAccts()">Close</button>
+    <button class="ghost" style="margin-top:8px" data-act="closeAccts">Close</button>
   </div>
 </div>
 
@@ -306,7 +306,7 @@
 "use strict";
 
 /* ================= constants & state ================= */
-const APP_VERSION = "5.8";
+const APP_VERSION = "5.9";
 const SUPABASE_URL = "https://anpvflizwcmyefbxsfpx.supabase.co";
 const SUPABASE_KEY = "sb_publishable_Va_eUdkFSmtD4uKqNIvppw_wlB1eEYJ";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { flowType: "implicit", detectSessionInUrl: true } });
@@ -523,17 +523,16 @@ function renderControls(){
   $("segMonth").className = view === "month" ? "on" : "";
   $("searchWrap").style.display = tab === "all" ? "" : "none";   // search lives on the All tab only
   const unit = view === "week" ? "week" : "month";
-  $("tabs").innerHTML =
-    '<button class="tab' + (tab==="this" ? " on" : "") + '" onclick="setTab(\'this\')">This ' + unit + '</button>'
-  + '<button class="tab' + (tab==="next" ? " on" : "") + '" onclick="setTab(\'next\')">Next ' + unit + '</button>'
-  + '<button class="tab' + (tab==="all" ? " on" : "") + '" onclick="setTab(\'all\')">All</button>';
+  $("tabs").innerHTML = [["this", "This " + unit], ["next", "Next " + unit], ["all", "All"]]
+    .map(([t, label]) => '<button class="tab' + (tab === t ? " on" : "") + '" data-act="setTab" data-tab="' + t + '">' + label + '</button>')
+    .join("");
 
   const used = [...new Set(items.map(i => i.account_id).filter(Boolean))]
     .map(acctById).filter(Boolean)
     .sort((x,y) => x.name.localeCompare(y.name));
   $("chips").innerHTML = used.length
-    ? ['<button class="chip' + (filter==="all" ? " on" : "") + '" data-m="all" onclick="setFilter(this.dataset.m)">All accounts</button>']
-      .concat(used.map(a => '<button class="chip' + (filter===a.id ? " on" : "") + '" data-m="' + a.id + '" onclick="setFilter(this.dataset.m)">' + esc(a.name) + '</button>'))
+    ? ['<button class="chip' + (filter === "all" ? " on" : "") + '" data-act="setFilter" data-acct="all">All accounts</button>']
+      .concat(used.map(a => '<button class="chip' + (filter === a.id ? " on" : "") + '" data-act="setFilter" data-acct="' + esc(a.id) + '">' + esc(a.name) + '</button>'))
       .join("")
     : "";
 }
@@ -542,16 +541,16 @@ function matchesQuery(i){
   if(!q) return true;
   return [i.name, i.notes, acctName(i), cycleLabel(i)].some(f => f && String(f).toLowerCase().includes(q));
 }
+// active first, then soonest due; undated rows sink to the bottom
+function byDue(a, b){
+  if(a.active !== b.active) return a.active ? -1 : 1;
+  const da = a.next_due || "9999", db = b.next_due || "9999";
+  return da < db ? -1 : da > db ? 1 : 0;
+}
 function visibleItems(){
   const { thisEnd, nextEnd } = periodEnds();
-  if(query.trim()){
-    // searching looks through EVERYTHING (all tabs, all accounts) so nothing hides
-    return items.filter(matchesQuery).sort((a,b) => {
-      if(a.active !== b.active) return a.active ? -1 : 1;
-      const da = a.next_due || "9999", db = b.next_due || "9999";
-      return da < db ? -1 : da > db ? 1 : 0;
-    });
-  }
+  // searching looks through EVERYTHING (all tabs, all accounts) so nothing hides
+  if(query.trim()) return items.filter(matchesQuery).sort(byDue);
   return items
     .filter(i => filter === "all" || i.account_id === filter)
     .filter(i => {
@@ -560,11 +559,7 @@ function visibleItems(){
       const d = new Date(i.next_due + "T00:00:00");
       return tab === "this" ? d < thisEnd : (d >= thisEnd && d < nextEnd);
     })
-    .sort((a,b) => {
-      if(a.active !== b.active) return a.active ? -1 : 1;
-      const da = a.next_due || "9999", db = b.next_due || "9999";
-      return da < db ? -1 : da > db ? 1 : 0;
-    });
+    .sort(byDue);
 }
 function dueLabel(it){
   if(!it.active) return '<div class="due">paused</div>';
@@ -590,7 +585,7 @@ function renderList(){
   $("list").innerHTML = shown.map(it => {
     const canPay = it.active && it.next_due;
     return '<div class="item' + (it.active ? "" : " inactive") + (it.id === glowId ? " ember" : "") + '">'
-      + '<div class="info" onclick="openForm(&quot;' + it.id + '&quot;)">'
+      + '<div class="info" data-act="editSub" data-id="' + esc(it.id) + '">'
       +   '<div class="name">' + esc(it.name) + '</div>'
       +   '<div class="meta">' + esc(acctName(it) || "no account set") + ' · ' + cycleLabel(it) + (it.notes ? ' · ' + esc(it.notes) : '') + '</div>'
       + '</div>'
@@ -598,7 +593,7 @@ function renderList(){
       +   (it.amount ? '<div class="amt">' + money(it.amount) + '</div>' : '')
       +   dueLabel(it)
       + '</div>'
-      + (canPay ? '<button class="paybtn" aria-label="Mark ' + esc(it.name) + ' paid" title="Mark paid" onclick="openPay(&quot;' + it.id + '&quot;)">✓</button>' : '')
+      + (canPay ? '<button class="paybtn" aria-label="Mark ' + esc(it.name) + ' paid" title="Mark paid" data-act="paySub" data-id="' + esc(it.id) + '">✓</button>' : '')
       + '</div>';
   }).join("");
 }
@@ -631,6 +626,9 @@ function refreshMethodSelect(){   // re-fill the "Paid with" dropdown if the for
   if(cur === "__new") return;   // mid "new account" prompt — leave it alone
   sel.innerHTML = methodOptions(cur || "");
 }
+function cycleUnitChanged(){
+  $("cycNwrap").style.visibility = $("f_cycu").value === "once" ? "hidden" : "visible";
+}
 function openForm(id){
   if(offline) return;
   editingId = id || null;
@@ -641,10 +639,9 @@ function openForm(id){
   const c = it ? cyc(it) : { unit:"month", n:1 };
   $("f_cycu").value = c.unit;
   $("f_cycn").value = c.n;
-  $("cycNwrap").style.visibility = c.unit === "once" ? "hidden" : "visible";
+  cycleUnitChanged();
   $("f_due").value = it?.next_due || "";
   $("f_method").innerHTML = methodOptions(it?.account_id || "");
-  $("f_method").onchange = onNewAccountOption;
   if(!accounts.length && navigator.onLine) load();   // dropdown opened empty — fetch accounts; refreshMethodSelect fills it in
   $("f_notes").value = it?.notes || "";
   $("f_active").checked = it ? it.active : true;
@@ -655,8 +652,9 @@ function openForm(id){
   show("deleteBtn", !!it);
   openSheet("formSheet");
 }
-async function onNewAccountOption(e){
-  if(e.target.value !== "__new") return;
+async function onNewAccountOption(el){
+  const e = { target: el };
+  if(el.value !== "__new") return;
   const n = prompt("New bank account or card name:");
   if(n && n.trim()){
     const { data, error } = await sb.from("accounts").insert({ name: n.trim() }).select().single();
@@ -666,7 +664,10 @@ async function onNewAccountOption(e){
   } else e.target.value = "";
 }
 function closeForm(){ closeSheet("formSheet"); }
-function formError(t){ const el = $("f_err"); el.textContent = t; el.style.display = "block"; }
+// shared by both sheets — one place that knows how an inline error is shown
+function sheetError(id, t){ const el = $(id); el.textContent = t; el.style.display = "block"; }
+const formError = t => sheetError("f_err", t);
+const payError = t => sheetError("p_err", t);
 async function saveItem(){
   const name = $("f_name").value.trim();
   const amount = $("f_amount").value;
@@ -739,8 +740,8 @@ function renderTrash(){
         + '<div class="nm">' + esc(it.name)
         +   '<span class="tag">' + (it.amount ? moneyText(it.amount) + " · " : "") + "deleted " + prettyDate(it.deleted_at.slice(0,10)) + '</span></div>'
         + '<div class="btns">'
-        +   '<button class="tbtn" onclick="restoreItem(\'' + it.id + '\')">Restore</button>'
-        +   '<button class="tbtn" style="color:var(--warn)" onclick="purgeItem(\'' + it.id + '\')">Delete forever</button>'
+        +   '<button class="tbtn" data-act="restoreItem" data-id="' + esc(it.id) + '">Restore</button>'
+        +   '<button class="tbtn" style="color:var(--warn)" data-act="purgeItem" data-id="' + esc(it.id) + '">Delete forever</button>'
         + '</div></div>').join("")
     : '<div class="empty" style="padding:20px 0">Nothing here — you haven’t deleted any subscriptions.</div>';
 }
@@ -775,7 +776,7 @@ function closePay(){ closeSheet("paySheet"); payingId = null; }
 async function confirmPay(){
   const it = items.find(x => x.id === payingId);
   if(!it) return;
-  const err = t => { const el = $("p_err"); el.textContent = t; el.style.display = "block"; };
+  const err = payError;
   const amt = $("p_amount").value, date = $("p_date").value;
   if(amt === "" || isNaN(Number(amt)) || Number(amt) < 0) return err("Enter the amount you actually paid.");
   if(!date) return err("Select the payment date.");
@@ -815,8 +816,8 @@ function renderAccts(){
         '<div class="acct">'
         + '<div class="nm' + (a.active ? "" : " off") + '">' + esc(a.name) + (a.active ? "" : '<span class="tag">inactive</span>') + '</div>'
         + '<div class="btns">'
-        +   '<button class="tbtn" onclick="renameAcct(\'' + a.id + '\')">Rename</button>'
-        +   '<button class="tbtn" onclick="toggleAcct(\'' + a.id + '\',' + (!a.active) + ')">' + (a.active ? "Deactivate" : "Reactivate") + '</button>'
+        +   '<button class="tbtn" data-act="renameAcct" data-id="' + esc(a.id) + '">Rename</button>'
+        +   '<button class="tbtn" data-act="toggleAcct" data-id="' + esc(a.id) + '" data-on="' + (!a.active) + '">' + (a.active ? "Deactivate" : "Reactivate") + '</button>'
         + '</div></div>').join("")
     : '<div class="empty" style="padding:20px 0">No accounts yet. Add your first one below.</div>';
 }
@@ -853,7 +854,55 @@ async function toggleAcct(id, active){
   renderAccts();
 }
 
+/* ================= event wiring =================
+   One listener per event type, dispatching on data-act / data-change / data-input.
+   Handlers are looked up in these tables rather than interpolated into markup, so a
+   forgotten esc() can no longer turn a subscription name into executable HTML. */
+const ACTIONS = {
+  signIn, signUp: signUpNew, sendLink, signOut, changePassword,
+  addSub: () => openForm(),
+  editSub: el => openForm(el.dataset.id),
+  paySub: el => openPay(el.dataset.id),
+  saveItem, delItem, closeForm, confirmPay, closePay,
+  setView: el => setView(el.dataset.view),
+  setTab: el => setTab(el.dataset.tab),
+  setFilter: el => setFilter(el.dataset.acct),
+  clearQuery,
+  openAccts, closeAccts, addAcct,
+  renameAcct: el => renameAcct(el.dataset.id),
+  toggleAcct: el => toggleAcct(el.dataset.id, el.dataset.on === "true"),
+  openTrash, closeTrash,
+  restoreItem: el => restoreItem(el.dataset.id),
+  purgeItem: el => purgeItem(el.dataset.id),
+  undoDelete
+};
+const CHANGES = {
+  cycleUnit: cycleUnitChanged,
+  pickAccount: onNewAccountOption,
+  showInactive: renderAccts
+};
+const INPUTS = {
+  search: el => setQuery(el.value)
+};
+
+document.addEventListener("click", e => {
+  const el = e.target.closest("[data-act]");
+  if(el && ACTIONS[el.dataset.act]) return ACTIONS[el.dataset.act](el, e);
+  // tapping the dimmed backdrop closes the sheet, but a click inside it must not
+  if(e.target.classList.contains("overlay") && ACTIONS[e.target.dataset.close]) ACTIONS[e.target.dataset.close]();
+});
+document.addEventListener("change", e => {
+  const el = e.target.closest("[data-change]");
+  if(el && CHANGES[el.dataset.change]) CHANGES[el.dataset.change](el, e);
+});
+document.addEventListener("input", e => {
+  const el = e.target.closest("[data-input]");
+  if(el && INPUTS[el.dataset.input]) INPUTS[el.dataset.input](el, e);
+});
+
 /* ================= self-update ================= */
+$("verLabel").textContent = "v" + APP_VERSION;   // the const is the only place the version is written
+
 async function checkForUpdate(){
   try{
     const res = await fetch(location.pathname + "?u=" + Date.now(), { cache: "no-store" });
@@ -871,5 +920,4 @@ checkForUpdate();
 init();
 </script>
 </body>
-<!-- v5.8 -->
 </html>

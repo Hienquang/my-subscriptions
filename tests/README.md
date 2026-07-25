@@ -9,6 +9,7 @@ Python + Playwright driving Chromium against a stubbed Supabase.
 python3 tests/run_tests.py            # everything
 python3 tests/test_logic.py           # just the billing-cycle / formatting maths
 python3 tests/test_ui.py              # just rendering and interaction
+python3 tests/shot.py [outdir]        # screenshots for eyeballing visual changes
 ```
 
 Requires `playwright` (Python) and a Chromium binary. `harness.py` points at
@@ -68,7 +69,9 @@ month won't be in `app.names()` until you `setTab('all')`.
   chips, search scoping.
 - **Flows** — mark paid (incl. one-time bills and overdue catch-up), soft delete,
   undo, restore, purge, offline round trip.
-- **Regressions** — v5.4 empty account dropdown (delayed accounts response) and
-  the failed-accounts-query wipe.
+- **Wiring** — the delegated `data-act` handlers, driven by real clicks rather than
+  by calling functions directly, so a broken listener actually fails the suite.
+- **Regressions** — v5.4 empty account dropdown (delayed accounts response), the
+  failed-accounts-query wipe, and the v5.8 concurrent-load clobber.
 
 Add a regression test whenever a bug is fixed; that is the point of this folder.
