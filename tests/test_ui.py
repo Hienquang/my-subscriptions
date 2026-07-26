@@ -98,6 +98,33 @@ def run():
         check("catch-up advances the due date into the future", nxt > days_from_today(0), True)
         check("catch-up keeps the anchor day", nxt.endswith("-28"), True)
 
+    # ------------------- v6.1 regression: editing must not erase the due_day anchor
+    # A 31st-anchored bill shows next_due clamped to Feb 28 all February. Saving any
+    # unrelated edit used to re-derive due_day from that clamped date (31 -> 28), so
+    # the bill silently stuck at the 28th forever — the v5.6 drift bug, reborn.
+    with App(subscriptions=[sub("iCloud", 2.99, due_day=31, next_due="2027-02-28")]) as app:
+        section("editing must not erase the due_day anchor (v6.1)")
+        app.run("setTab('all')")
+        app.run("openForm('sub-icloud')")
+        app.settle(150)   # openSheet focuses the first field on a 30ms timer; filling
+                          # before it fires sends the keystrokes to the wrong input
+        app.page.fill("#f_amount", "3.99")
+        app.run("saveItem()")
+        # the sheet closes only after a successful save — deterministic, unlike a sleep
+        app.page.wait_for_function("!$('formSheet').classList.contains('open')", timeout=5000)
+        app.settle(200)
+        check("due_day is still 31 after editing only the amount",
+              app.db("subscriptions")[0]["due_day"], 31)
+        check("the edit itself landed", app.db("subscriptions")[0]["amount"], 3.99)
+        app.run("openForm('sub-icloud')")
+        app.settle(150)
+        app.page.fill("#f_due", "2027-03-15")
+        app.run("saveItem()")
+        app.page.wait_for_function("!$('formSheet').classList.contains('open')", timeout=5000)
+        app.settle(200)
+        check("picking a new date does re-anchor due_day",
+              app.db("subscriptions")[0]["due_day"], 15)
+
     # ------------------------------------ v5.4 regression: account dropdown race
     with App(subscriptions=basic_set(), delays={"accounts": 1500}) as app:
         section("regression v5.4 — accounts arriving after the form opens")

@@ -779,6 +779,12 @@ async function saveItem(){
   if(!due) return formError("Next bill due date is required.");
   if(!accountId || accountId === "__new") return formError("Select the account it's paid with.");
   $("saveBtn").disabled = true;
+  // due_day anchors monthly cycles — see addCycle(). Re-derive it only when the user
+  // actually picked a new date: the form shows next_due, which may be sitting on a
+  // clamped day (a 31st bill reads Feb 28 all February), so recomputing it on an
+  // unrelated edit would silently overwrite the real anchor and stick the bill there.
+  const prev = editingId ? items.find(x => x.id === editingId) : null;
+  const dueDay = (prev && prev.next_due === due && prev.due_day) ? prev.due_day : Number(due.slice(8, 10));
   const rec = {
     name,
     amount: Number(amount),
@@ -786,7 +792,7 @@ async function saveItem(){
     cycle_unit: unit,
     cycle_count: unit === "once" ? null : n,
     next_due: due,
-    due_day: Number(due.slice(8, 10)),   // month-cycle anchor — see addCycle()
+    due_day: dueDay,
     account_id: accountId,
     notes: $("f_notes").value.trim() || null,
     active: $("f_active").checked
