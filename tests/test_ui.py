@@ -417,6 +417,8 @@ def run():
         }""")
         check("the page itself is cached for offline boot", "index.html" in cached, True)
         check("so is the manifest", "manifest.json" in cached, True)
+        check("so is the self-hosted supabase bundle (v6.1 — a CDN script was opaque "
+              "to the cache and cold offline starts died)", "supabase.js" in cached, True)
         check("the update probe is never cached",
               [u for u in cached if "?" in u], [])
 

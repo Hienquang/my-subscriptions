@@ -12,7 +12,11 @@
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" href="icon-192.png?v=3">
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=3">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- Self-hosted (see the banner in the file for version/provenance): a CDN <script>
+     is a no-cors request, so its opaque response could never be cached by the service
+     worker and a true offline cold start died before createClient. Same-origin, it's
+     precached with the rest of the shell. -->
+<script src="supabase.js"></script>
 <style>
   /* ---------- theme: make camp (On My Way design system, always dark) ---------- */
   :root{

@@ -15,11 +15,13 @@ const CACHE = "due-shell-v1";
 
 // Everything needed to boot with no network. Same-origin only: a cross-origin
 // asset that hangs (rather than failing) would leave the worker stuck installing
-// forever. The Supabase bundle is picked up by the fetch handler below the first
-// time the page loads online, which is always before the first offline launch.
+// forever. The Supabase bundle is self-hosted (v6.1) precisely so it can live in
+// this list — as a CDN script its response was opaque and uncacheable, which broke
+// cold offline starts.
 const SHELL = [
   "./",
   "./index.html",
+  "./supabase.js",
   "./manifest.json",
   "./icon-192.png",
   "./icon-512.png",

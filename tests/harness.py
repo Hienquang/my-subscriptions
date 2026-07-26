@@ -144,10 +144,10 @@ class App:
         self.tmp = tempfile.mkdtemp(prefix="due-test-")
         html = open(os.path.join(ROOT, "index.html"), encoding="utf-8").read()
         html = re.sub(
-            r'<script src="https://cdn\.jsdelivr\.net/npm/@supabase/supabase-js@2"></script>',
+            r'<script src="supabase\.js"></script>',
             '<script src="stub.js"></script>', html)
         if '<script src="stub.js">' not in html:
-            raise SystemExit("harness: could not swap the Supabase CDN tag — did the tag change?")
+            raise SystemExit("harness: could not swap the Supabase bundle tag — did the tag change?")
         # seed hooks must exist before the app script runs
         seed = ("<script>window.__db=%s;window.__delays=%s;window.__errors=%s;window.__session=%s;</script>"
                 % (json.dumps(self.seed), json.dumps(self.delays), json.dumps(self.errors),
@@ -155,7 +155,9 @@ class App:
         html = html.replace('<script src="stub.js"></script>', '<script src="stub.js"></script>' + seed)
         open(os.path.join(self.tmp, "index.html"), "w", encoding="utf-8").write(html)
         shutil.copy(os.path.join(TESTS, "stub.js"), self.tmp)
-        for extra in ("manifest.json", "sw.js", "icon-192.png", "icon-512.png",
+        # supabase.js is copied even though the page loads stub.js instead — the
+        # service worker must still find it to precache, and a test asserts it does.
+        for extra in ("supabase.js", "manifest.json", "sw.js", "icon-192.png", "icon-512.png",
                       "icon-maskable-512.png", "apple-touch-icon.png"):
             src = os.path.join(ROOT, extra)
             if os.path.exists(src):
