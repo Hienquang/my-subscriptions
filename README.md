@@ -10,6 +10,7 @@ Live at **https://hienquang.github.io/my-subscriptions/**
 | File | What it is |
 | --- | --- |
 | `index.html` | The whole app — markup, styles and logic in one file, no build step |
+| `supabase.js` | Self-hosted `@supabase/supabase-js` UMD bundle (version in its banner) — as a CDN script its no-cors response could never be cached, which broke offline cold starts |
 | `sw.js` | Service worker: caches the shell so it opens with no network |
 | `manifest.json` | Makes it installable to a home screen |
 | `db/migrations/` | Schema history for the Supabase backend |
@@ -43,7 +44,7 @@ running a while.
 ## Working on it
 
 ```bash
-python3 tests/run_tests.py     # 163 checks; run before committing
+python3 tests/run_tests.py     # 175 checks; run before committing
 python3 tests/shot.py          # screenshots at phone and desktop widths
 ```
 

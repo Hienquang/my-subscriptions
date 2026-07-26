@@ -258,7 +258,8 @@ def run():
     # ------------------------------------- v5.9 delegated events (real clicks)
     with App(subscriptions=basic_set()) as app:
         section("everything is reachable by clicking (v5.9)")
-        check("version label is rendered from APP_VERSION", app.text("#verLabel"), "v6.0")
+        check("version label is rendered from APP_VERSION",
+              app.text("#verLabel"), app.eval("'v' + APP_VERSION"))
         check("the version appears exactly once, from the const",
               app.eval("document.body.innerHTML.split('v' + APP_VERSION).length - 1"), 1)
 
