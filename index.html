@@ -342,6 +342,7 @@ const SUPABASE_KEY = "sb_publishable_Va_eUdkFSmtD4uKqNIvppw_wlB1eEYJ";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { flowType: "implicit", detectSessionInUrl: true } });
 
 let items = [], deletedItems = [], accounts = [], lastPay = {};
+let userId = null;   // who the localStorage cache belongs to — see saveCache()/useCache()
 let editingId = null, payingId = null, justPaidId = null, offline = false;
 let loadToken = 0;   // only the newest load() may write to state — see load()
 let filter = "all", query = "";
@@ -432,10 +433,17 @@ function periodEnds(){
 /* ================= auth ================= */
 async function init(){
   const { data:{ session } } = await sb.auth.getSession();
+  userId = session?.user?.id || null;
   session ? showApp() : showAuth();
-  sb.auth.onAuthStateChange(ev => {
-    if(ev === "SIGNED_IN") showApp();
-    if(ev === "SIGNED_OUT") showAuth();
+  sb.auth.onAuthStateChange((ev, sess) => {
+    if(ev === "SIGNED_IN"){ userId = sess?.user?.id || userId; showApp(); }
+    if(ev === "SIGNED_OUT"){
+      // the cache is one signed-in person's data — never leave it behind for the
+      // next account to see offline
+      userId = null;
+      try{ localStorage.removeItem("cache"); }catch(e){}
+      showAuth();
+    }
   });
 }
 function showAuth(){ show("appView", false); show("authView", true); }
@@ -555,11 +563,13 @@ function loadFailed(err){
   }
   banner("Couldn't refresh: " + m + " — showing saved data.", "err");
 }
-function saveCache(){ try{ localStorage.setItem("cache", JSON.stringify({ items, deletedItems, accounts, lastPay })); }catch(e){} }
+function saveCache(){ try{ localStorage.setItem("cache", JSON.stringify({ uid: userId, items, deletedItems, accounts, lastPay })); }catch(e){} }
 function useCache(){
   try{
     const c = JSON.parse(localStorage.getItem("cache") || "null");
-    if(c){ items = c.items || []; deletedItems = c.deletedItems || []; accounts = c.accounts || []; lastPay = c.lastPay || {}; }
+    // a cache stamped with someone else's uid is not this user's data — ignore it
+    // (an older cache has no uid stamp; trust it once, saveCache re-stamps it)
+    if(c && (!c.uid || c.uid === userId)){ items = c.items || []; deletedItems = c.deletedItems || []; accounts = c.accounts || []; lastPay = c.lastPay || {}; }
   }catch(e){}
   render();
 }
@@ -881,7 +891,10 @@ function openPay(id){
   payingId = id;
   $("payTitle").textContent = "Mark paid — " + it.name;
   $("p_amount").value = it.amount ?? "";
-  $("p_date").value = it.next_due || iso(today());
+  // due or overdue -> the due date is when it was probably paid; paying EARLY means
+  // the money moved today — never default a payment to a date that hasn't happened
+  const t = iso(today());
+  $("p_date").value = (it.next_due && it.next_due <= t) ? it.next_due : t;
   $("p_err").style.display = "none";
   openSheet("paySheet");
 }

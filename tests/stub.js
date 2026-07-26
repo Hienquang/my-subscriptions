@@ -140,11 +140,11 @@
         auth: {
           async getSession() { return { data: { session: window.__session }, error: null }; },
           onAuthStateChange(cb) { authListeners.push(cb); return { data: { subscription: { unsubscribe() {} } } }; },
-          async signInWithPassword() { window.__session = { user: { id: "test-user" } }; authListeners.forEach(f => f("SIGNED_IN")); return { data: {}, error: null }; },
+          async signInWithPassword() { window.__session = { user: { id: "test-user" } }; authListeners.forEach(f => f("SIGNED_IN", window.__session)); return { data: {}, error: null }; },
           async signUp() { return { data: { session: null }, error: null }; },
           async signInWithOtp() { return { data: {}, error: null }; },
           async updateUser() { return { data: {}, error: null }; },
-          async signOut() { window.__session = null; authListeners.forEach(f => f("SIGNED_OUT")); return { error: null }; }
+          async signOut() { window.__session = null; authListeners.forEach(f => f("SIGNED_OUT", null)); return { error: null }; }
         }
       };
     }

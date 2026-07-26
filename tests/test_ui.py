@@ -71,7 +71,8 @@ def run():
         app.run("setTab('all')")
         app.run("openPay('sub-netflix')")
         check("pay sheet prefills the planned amount", app.eval("$('p_amount').value"), "15.99")
-        check("pay sheet prefills the due date", app.eval("$('p_date').value"), days_from_today(2))
+        check("paying early defaults the date to today, not the future due date (v6.1)",
+              app.eval("$('p_date').value"), days_from_today(0))
         app.run("$('p_amount').value = '17.49'; confirmPay()")
         app.settle(400)
         payments = app.db("payments")
@@ -92,7 +93,9 @@ def run():
 
     with App(subscriptions=[sub("Gas bill", 60, due_offset=-70, due_day=28)]) as app:
         section("overdue catch-up")
-        app.run("openPay('sub-gas-bill'); confirmPay()")
+        app.run("openPay('sub-gas-bill')")
+        check("an overdue bill still prefills its own due date", app.eval("$('p_date').value"), days_from_today(-70))
+        app.run("confirmPay()")
         app.settle(400)
         nxt = app.db("subscriptions")[0]["next_due"]
         check("catch-up advances the due date into the future", nxt > days_from_today(0), True)
@@ -437,6 +440,20 @@ def run():
               "offline" in app.text("#offbar").lower(), True)
         check("edits are disabled until the network is back",
               app.eval("document.body.classList.contains('off')"), True)
+
+    # --------------------- v6.1: the cache is one user's data, not the device's
+    with App(subscriptions=[sub("Netflix", 15.99)]) as app:
+        section("localStorage cache is per-user (v6.1)")
+        app.run("setTab('all')")
+        cache = app.page.evaluate("() => JSON.parse(localStorage.getItem('cache'))")
+        check("the cache is stamped with its owner's uid", cache.get("uid"), "test-user")
+        app.run("localStorage.setItem('cache', JSON.stringify("
+                "{uid: 'somebody-else', items: [{id: 'x', name: 'Their secret sub', active: true}]}))")
+        app.run("items = []; useCache()")
+        check("someone else's cache is never rendered", app.names(), [])
+        app.run("signOut()")
+        app.settle(300)
+        check("sign-out clears the cache entirely", app.eval("localStorage.getItem('cache')"), None)
 
     # ------------------------------------------------- soft delete, undo, trash
     with App(subscriptions=basic_set()) as app:
